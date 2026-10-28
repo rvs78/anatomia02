@@ -12,3 +12,17 @@ for item in sources:
     print(item["name"],img.size)
 
 # Actualització per activar la importació automatitzada del material RA2.
+
+# Neteja visual del material d'avaluació: oculta els rètols laterals
+# impresos a les làmines originals sense modificar l'anatomia central.
+from PIL import ImageDraw
+for filename in ("atlas_art.webp", "atlas_ven.webp"):
+    path="assets/"+filename
+    image=Image.open(path).convert("RGB")
+    width,height=image.size
+    color=image.getpixel((width//2, 3))
+    brush=ImageDraw.Draw(image)
+    brush.rectangle((0, 0, int(width*.265), height), fill=color)
+    brush.rectangle((int(width*.735), 0, width, height), fill=color)
+    image.save(path,"WEBP",quality=92,method=6)
+    print("clean labels:",filename,image.size)
