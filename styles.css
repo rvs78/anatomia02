@@ -322,9 +322,14 @@ main { height: calc(100% - 64px); }
 }
 .field input::placeholder { color: #9b92c9; }
 .field input:focus { border-color: var(--foil); outline: none; }
-.welcome .art { position: relative; overflow: hidden; display: grid; place-items: center; padding: 34px;
+.welcome .art { position: relative; overflow: hidden; display: grid; place-items: center; padding: 34px 34px 64px;
   background: radial-gradient(circle at 1px 1px, var(--page-dot) 1.4px, transparent 1.6px) 0 0 / 14px 14px, var(--page); --sys: var(--art); }
 .welcome .art .plate { position: relative; left: auto; top: auto; height: auto; width: min(100%, calc((100vh - 64px - 110px) * 1024 / 1000), 860px); rotate: -1.5deg; }
+.welcome .credit {
+  position: absolute; right: 20px; bottom: 16px;
+  padding: 6px 14px; border-radius: 999px; background: var(--cover); color: var(--cover-ink);
+  font-family: var(--display); font-weight: 800; font-size: 1.05rem; letter-spacing: .01em;
+}
 .welcome .note { font-size: .85rem; color: var(--cover-muted); max-width: 46ch; }
 
 /* ---------- Sobre d'instruccions ---------- */
@@ -450,6 +455,8 @@ main { height: calc(100% - 64px); }
   .welcome { grid-template-columns: 1fr; }
   .welcome .art { height: auto; }
   .welcome .art .plate { width: min(100%, 520px); }
+  .welcome .art { padding-bottom: 20px; gap: 16px; }
+  .welcome .credit { position: static; justify-self: end; }
   .cards { grid-template-columns: 1fr; }
   .welcome .intro-col { padding: 28px 22px; }
   .qcard, .sheet { padding: 20px; }

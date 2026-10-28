@@ -174,7 +174,7 @@ function previewPlate() {
   const slots = A.targets.map(t => show.includes(t.name)
     ? `<span class="slot ${t.side} done" style="--sx:${t.slotX}%;top:${t.slotY}%">${esc(t.name)}</span>`
     : `<span class="slot ${t.side}" style="--sx:${t.slotX}%;top:${t.slotY}%"></span>`).join('');
-  return `<div class="plate" style="aspect-ratio:${A.w}/${A.h}"><img src="${A.src}" alt="">
+  return `<div class="plate" aria-hidden="true" style="aspect-ratio:${A.w}/${A.h}"><img src="${A.src}" alt="">
     <svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg>${slots}</div>`;
 }
 
@@ -198,7 +198,7 @@ function login() {
       </form>
       <p class="note">El progrés es desa en aquest navegador. Si canvies d'ordinador o fas servir una finestra privada, començaràs de nou.</p>
     </div>
-    <div class="art" aria-hidden="true">${previewPlate()}</div>
+    <div class="art">${previewPlate()}<p class="credit">Aplicación de Rubén Vallejo</p></div>
   </section>`;
   $('#login').onsubmit = e => {
     e.preventDefault();
