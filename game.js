@@ -9,13 +9,50 @@ function award(n){s.points=Math.max(0,s.points+n);if(n>0){s.correct++;s.streak++
 function login(){draw('<section class="card hero"><div class="pill">Anatomia Humana · RA2</div><h1>Vascular Quest</h1><h2>Vasos sanguinis i circulació</h2><p>Identifica artèries i venes, supera 20 preguntes i explora un cos 3D.</p><form id="form"><label>Correu ISVH<input type="email" name="email" required placeholder="nom@isvh.cat"></label><label>Contrasenya<input type="password" name="password" required></label><button>Comença →</button></form><p id="feedback"></p><small>Les puntuacions es desen en aquest navegador. És un accés compartit, no una verificació d’identitat.</small></section>');document.querySelector('#form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),email=String(f.get('email')).toLowerCase().trim();if(!/^[^@\s]+@isvh\.cat$/.test(email)||f.get('password')!=='alumnesap')return feedback('Revisa el correu i la contrasenya.');s=init();s.email=email;s.phase=1;save();render()}}
 const figure='<svg viewBox="0 0 100 110" aria-label="Silueta corporal esquemàtica"><g fill="#789eaf" opacity=".7"><ellipse cx="50" cy="10" rx="8" ry="9"/><path d="M45 20L30 25L18 54L23 57L34 33L39 57L40 70L37 102L46 103L50 75L54 103L63 102L60 70L61 57L66 33L77 57L82 54L70 25L55 20Z"/></g><path d="M48 21V60L44 99M52 21V60L57 99M48 28L32 34L23 56M52 28L68 34L77 56" stroke="#f36476" stroke-width="1.4" fill="none"/></svg>';
 const positions=[[49,29],[48,23],[44,20],[52,15],[36,29],[49,12],[44,14],[55,15],[51,8],[45,10],[32,36],[27,47],[25,59],[31,59],[26,69],[50,45],[46,43],[45,48],[56,49],[50,53],[43,62],[42,73],[42,84],[42,92],[42,97],[52,14],[57,17],[63,28],[54,29],[55,38],[70,43],[67,46],[69,53],[68,36],[55,48],[55,47],[59,45],[58,51],[56,61],[59,74],[59,84],[64,85],[57,91]];
-function phase1(){if(s.level>=regions.length){s.phase=2;save();return render()}let [title,names]=regions[s.level],done=s.placements[s.level]||{};let offset=regions.slice(0,s.level).reduce((v,g)=>v+g[1].length,0);
-draw('<h1>Fase 1 · Mapa vascular</h1><p class="pill">Nivell '+(s.level+1)+' / 9 · '+title+'</p><div class="grid"><section class="card"><div class="body">'+figure+names.map((v,i)=>{let [x,y]=positions[(offset+i)%positions.length];return '<button class="mark '+(done[i]?'solved':'')+'" data-target="'+i+'" style="left:'+x+'%;top:'+y+'%">'+(done[i]?v:'? '+(i+1))+'</button>'}).join('')+'</div><p class="sub">Representació orientativa: selecciona o arrossega una etiqueta a la posició indicada. No és una làmina anatòmica de precisió.</p></section><section class="card"><h2>Etiquetes</h2><div class="bank">'+names.map((v,i)=>done[i]?'':'<button data-chip="'+i+'" draggable="true">'+v+'</button>').join('')+'</div><p id="feedback"></p><button class="secondary" id="hint">💡 Pista (−5)</button><button id="next" '+(Object.keys(done).length===names.length?'':'disabled')+'>Següent nivell →</button><p class="sub">+10 encert · −3 error · ratxa +15</p></section></div>');
-const attempt=(a,b)=>{if(a==null||done[b])return;if(a===b){done[b]=true;s.placements[s.level]=done;award(10);phase1();feedback('✓ Correcte: +10 punts')}else{award(-3);feedback('✗ Prova-ho de nou: −3 punts')}};
+const visualRefs=[
+{file:'aorta.webp',source:17,caption:'Aorta i grans vasos toràcics'},
+{file:'head.webp',source:22,caption:'Arbre arterial de cap i coll'},
+{file:'arm.webp',source:29,caption:'Artèries de braç i avantbraç'},
+{file:'abdomen.webp',source:34,caption:'Branques de l’aorta abdominal'},
+{file:'legs.webp',source:38,caption:'Eix arterial de les extremitats inferiors'},
+{file:'venous_head.webp',source:44,caption:'Venes cervicals i centrals'},
+{file:'venous_arm.webp',source:46,caption:'Retorn venós de l’extremitat superior'},
+{file:'venous_abdomen.webp',source:42,caption:'Retorn venós del tòrax i de l’abdomen'},
+{file:'venous_legs.webp',source:48,caption:'Sistema venós de l’extremitat inferior'}
+];
+const imagePoints=[
+[[53,48],[51,38],[47,34],[45,19],[70,32]],
+[[49,42],[55,43],[50,49],[52,30],[41,45]],
+[[48,20],[45,41],[42,70],[65,71],[39,93]],
+[[51,31],[48,29],[40,35],[54,53],[51,62]],
+[[51,35],[58,48],[56,65],[50,78],[47,92]],
+[[48,35],[56,36],[62,46],[51,53],[54,61]],
+[[52,53],[42,54],[50,64],[49,45]],
+[[51,43],[50,57],[56,62],[51,79]],
+[[50,38],[50,62],[47,72],[58,83]]
+];
+function phase1(){
+if(s.level>=regions.length){s.phase=2;save();return render()}
+let [title,names]=regions[s.level],done=s.placements[s.level]||{},ref=visualRefs[s.level],spots=imagePoints[s.level],venous=s.level>=5,zoom=1,panX=0,panY=0,dragPoint=null,moving=false;
+const targetUI=()=>names.map((v,i)=>{let p=spots[i];return '<button class="mark hotspot '+(done[i]?'solved':'')+'" data-target="'+i+'" style="left:'+p[0]+'%;top:'+p[1]+'%" title="Posició '+(i+1)+'">'+(done[i]?'✓':'✚')+'</button>'}).join('');
+draw('<div class="stageHeader"><div><span class="eyebrow">Fase 01 · Atles interactiu</span><h1>'+title+'</h1><p>Identifica les estructures amb les làmines originals del RA2.</p></div><div class="levelCounter"><b>'+(s.level+1)+'</b><span>/ 09 nivells</span></div></div><div class="progressTrack"><span style="width:'+(s.level/9*100)+'%"></span></div><div class="grid visualGrid"><section class="card imageCard"><div class="mapTools"><span class="mapMeta">'+(venous?'🔵 Sistema venós':'🔴 Sistema arterial')+'</span><div class="zoomButtons"><button class="secondary" id="minus" aria-label="Allunya">−</button><button class="secondary" id="plus" aria-label="Amplia">+</button><button class="secondary" id="recenter" aria-label="Centra">⤢</button></div></div><div class="mapViewport" id="viewport"><div class="mapTransform" id="mapTransform"><img id="vascularMap" src="./assets/'+ref.file+'" alt="'+ref.caption+' · làmina de la presentació RA2" draggable="false"><div class="pointLayer">'+targetUI()+'</div></div><div class="imageFallback" id="imageFallback" hidden>Il·lustració original pendent de publicar a GitHub.<div class="fallbackFigure">'+figure+'</div></div></div><p class="sourceNote">Font: presentació RA2.2, diapositiva '+ref.source+' · '+ref.caption+'. <b>Amplia</b> per inspeccionar i <b>arrossega el fons</b> per moure’l.</p></section><section class="card answerCard"><span class="eyebrow">Laboratori vascular</span><h2>Arrossega les etiquetes</h2><p class="sub">Selecciona el nom i toca el marcador corresponent. Pots fer servir arrossegar i deixar anar.</p><div class="bank">'+names.map((v,i)=>done[i]?'':'<button data-chip="'+i+'" draggable="true">'+v+'</button>').join('')+'</div><div class="metricRow"><div><span>Encerts</span><strong>'+Object.keys(done).length+'/'+names.length+'</strong></div><div><span>Punts</span><strong>'+s.points+'</strong></div></div><p id="feedback" aria-live="polite"></p><div class="actions"><button class="secondary" id="hint">✦ Pista (−5)</button><button id="next" '+(Object.keys(done).length===names.length?'':'disabled')+'>Continua →</button></div><p class="sub">+10 encert · −3 error · +15 cada 3 encerts seguits</p></section></div>');
+const image=document.querySelector('#vascularMap'),viewport=document.querySelector('#viewport'),transform=document.querySelector('#mapTransform');
+image.onerror=()=>{image.hidden=true;document.querySelector('.pointLayer').hidden=true;document.querySelector('#imageFallback').hidden=false};
+function apply(){transform.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')'}
+function changeZoom(delta){zoom=Math.max(1,Math.min(3.4,+(zoom+delta).toFixed(2)));if(zoom===1){panX=0;panY=0}apply()}
+document.querySelector('#plus').onclick=()=>changeZoom(.35);
+document.querySelector('#minus').onclick=()=>changeZoom(-.35);
+document.querySelector('#recenter').onclick=()=>{zoom=1;panX=panY=0;apply()};
+viewport.onwheel=e=>{e.preventDefault();changeZoom(e.deltaY<0?.15:-.15)};
+viewport.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;dragPoint={x:e.clientX,y:e.clientY,ox:panX,oy:panY};moving=false});
+viewport.addEventListener('pointermove',e=>{if(!dragPoint||zoom<=1)return;let dx=e.clientX-dragPoint.x,dy=e.clientY-dragPoint.y;if(Math.abs(dx)+Math.abs(dy)>5)moving=true;panX=dragPoint.ox+dx;panY=dragPoint.oy+dy;apply()});
+window.addEventListener('pointerup',()=>{dragPoint=null},{once:true});
+const attempt=(a,b)=>{if(a==null||done[b])return;if(a===b){done[b]=true;s.placements[s.level]=done;award(10);selected=null;phase1();feedback('✓ Molt bé! +10 punts')}else{award(-3);feedback('✗ Aquesta etiqueta no correspon al punt. −3 punts')}};
 document.querySelectorAll('[data-chip]').forEach(b=>{b.onclick=()=>{selected=+b.dataset.chip;document.querySelectorAll('[data-chip]').forEach(v=>v.classList.toggle('selected',v===b))};b.ondragstart=e=>e.dataTransfer.setData('text/plain',b.dataset.chip)});
 document.querySelectorAll('[data-target]').forEach(b=>{b.onclick=()=>attempt(selected,+b.dataset.target);b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();attempt(+e.dataTransfer.getData('text/plain'),+b.dataset.target)}});
-document.querySelector('#hint').onclick=()=>{let i=names.findIndex((_,j)=>!done[j]);if(i>=0){award(-5);feedback('Pista: '+names[i]+' és el punt '+(i+1))}};
-document.querySelector('#next').onclick=()=>{s.level++;selected=null;save();render()}}
+document.querySelector('#hint').onclick=()=>{let i=names.findIndex((_,j)=>!done[j]);if(i>=0){award(-5);feedback('Pista: el punt '+(i+1)+' és '+names[i])}};
+document.querySelector('#next').onclick=()=>{s.level++;selected=null;save();render()}
+}
 function phase2(){if(s.q===20){s.phase=3;save();return render()}let [question,options,correct]=quiz[s.q],answer=s.answers[s.q];
 draw('<h1>Fase 2 · Test vascular</h1><p class="pill">Pregunta '+(s.q+1)+' / 20</p><section class="card"><h2>'+question+'</h2><div class="choices">'+options.map((o,i)=>'<button data-answer="'+i+'" '+(answer!=null?'disabled':'')+'>'+String.fromCharCode(65+i)+'. '+o+'</button>').join('')+'</div><p id="feedback"></p><button id="next" '+(answer==null?'disabled':'')+'>Continua →</button></section>');
 document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>{if(s.answers[s.q]!=null)return;let n=+b.dataset.answer;s.answers[s.q]=n;award(n===correct?10:-3);feedback(n===correct?'✓ Correcte!':'✗ Resposta correcta: '+options[correct]);document.querySelectorAll('[data-answer]').forEach(c=>c.disabled=true);document.querySelector('#next').disabled=false});document.querySelector('#next').onclick=()=>{s.q++;save();render()}}
