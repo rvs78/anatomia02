@@ -1,5 +1,5 @@
 import {regions,quiz} from './data.js';
-const el=document.querySelector('#app'),status=document.querySelector('#status'),KEY='ap-ra2-vascular-v3';
+const el=document.querySelector('#app'),status=document.querySelector('#status'),KEY='ap-ra2-vascular-v4';
 const init=()=>({email:'',phase:0,level:0,q:0,points:0,streak:0,correct:0,errors:0,hints:0,placements:{},answers:{},model:{},start:new Date().toISOString()});
 let s;try{s=JSON.parse(localStorage.getItem(KEY))||init()}catch{s=init()}
 let selected=null,dispose=()=>{};const save=()=>localStorage.setItem(KEY,JSON.stringify(s));
@@ -9,49 +9,38 @@ function award(n){s.points=Math.max(0,s.points+n);if(n>0){s.correct++;s.streak++
 function login(){draw('<section class="card hero"><div class="pill">Anatomia Humana · RA2</div><h1>Vascular Quest</h1><h2>Vasos sanguinis i circulació</h2><p>Identifica artèries i venes, supera 20 preguntes i explora un cos 3D.</p><form id="form"><label>Correu ISVH<input type="email" name="email" required placeholder="nom@isvh.cat"></label><label>Contrasenya<input type="password" name="password" required></label><button>Comença →</button></form><p id="feedback"></p><small>Les puntuacions es desen en aquest navegador. És un accés compartit, no una verificació d’identitat.</small></section>');document.querySelector('#form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),email=String(f.get('email')).toLowerCase().trim();if(!/^[^@\s]+@isvh\.cat$/.test(email)||f.get('password')!=='alumnesap')return feedback('Revisa el correu i la contrasenya.');s=init();s.email=email;s.phase=1;save();render()}}
 const figure='<svg viewBox="0 0 100 110" aria-label="Silueta corporal esquemàtica"><g fill="#789eaf" opacity=".7"><ellipse cx="50" cy="10" rx="8" ry="9"/><path d="M45 20L30 25L18 54L23 57L34 33L39 57L40 70L37 102L46 103L50 75L54 103L63 102L60 70L61 57L66 33L77 57L82 54L70 25L55 20Z"/></g><path d="M48 21V60L44 99M52 21V60L57 99M48 28L32 34L23 56M52 28L68 34L77 56" stroke="#f36476" stroke-width="1.4" fill="none"/></svg>';
 const positions=[[49,29],[48,23],[44,20],[52,15],[36,29],[49,12],[44,14],[55,15],[51,8],[45,10],[32,36],[27,47],[25,59],[31,59],[26,69],[50,45],[46,43],[45,48],[56,49],[50,53],[43,62],[42,73],[42,84],[42,92],[42,97],[52,14],[57,17],[63,28],[54,29],[55,38],[70,43],[67,46],[69,53],[68,36],[55,48],[55,47],[59,45],[58,51],[56,61],[59,74],[59,84],[64,85],[57,91]];
-const visualRefs=[
-{file:'atlas_art.webp',source:56,caption:'Grans vasos arterials del cos'},
-{file:'atlas_art.webp',source:56,caption:'Artèries de les extremitats superiors'},
-{file:'atlas_art.webp',source:56,caption:'Artèries viscerals i ilíaques'},
-{file:'atlas_art.webp',source:56,caption:'Artèries de les extremitats inferiors'},
-{file:'atlas_art.webp',source:56,caption:'Atles arterial complet'},
-{file:'atlas_ven.webp',source:56,caption:'Venes del cap i tòrax'},
-{file:'atlas_ven.webp',source:56,caption:'Venes del membre superior'},
-{file:'atlas_ven.webp',source:56,caption:'Venes abdominals'},
-{file:'atlas_ven.webp',source:56,caption:'Venes del membre inferior'}
-];
-const imagePoints=[
-[[49,20],[48,25],[44,25],[50,40]],
-[[41,25],[38,38],[37,49],[40,49]],
-[[50,51],[51,47],[55,51],[49,63],[46,68]],
-[[45,72],[46,80],[45,87],[53,89],[45,96]],
-[[49,20],[44,25],[50,51],[45,72],[46,80]],
-[[49,20],[54,21],[44,27],[52,27],[51,35]],
-[[34,35],[40,37],[37,48]],
-[[52,45],[57,51],[50,63]],
-[[47,72],[47,81],[53,87],[46,90],[47,97]]
-];
+const vascularPositions={
+'Caròtida comuna':[51,18],'Arc aòrtic':[51,25],'Subclàvia':[37,26],'Axil·lar':[34,33],'Braquial':[32,41],'Aorta toràcica':[50,38],'Tronc celíac':[50,48],'Renal':[56,51],
+'Radial':[31,54],'Cubital':[41,53],'Aorta abdominal':[50,57],'Ilíaca comuna':[48,67],'Ilíaca externa':[45,72],'Femoral':[44,80],'Poplítia':[45,86],'Tibial anterior':[46,93],'Tibial posterior':[56,92],'Pèdia':[45,98],
+'Jugular interna':[49,19],'Jugular externa':[58,19],'Braquiocefàlica':[54,26],'Cava superior':[54,33],'Cava inferior':[53,53],'Cefàlica':[34,43],'Basílica':[42,42],'Mitjana del colze':[35,51],'Ilíaca comuna (vena)':[54,67],'Femoral (vena)':[55,79],'Tibial anterior (vena)':[54,91],'Arc venós dorsal':[49,97],'Poplítia (vena)':[55,86],'Safena magna':[61,83],'Renal (vena)':[57,53]
+};
+const arterySet=['Caròtida comuna','Arc aòrtic','Subclàvia','Axil·lar','Braquial','Aorta toràcica','Tronc celíac','Renal','Radial','Cubital','Aorta abdominal','Ilíaca comuna','Ilíaca externa','Femoral','Poplítia','Tibial anterior','Tibial posterior','Pèdia'];
+const veinSet=['Jugular interna','Jugular externa','Subclàvia','Braquiocefàlica','Cava superior','Cava inferior','Cefàlica','Basílica','Mitjana del colze','Renal','Ilíaca comuna','Femoral','Tibial anterior','Arc venós dorsal','Poplítia','Safena magna'];
 function phase1(){
-if(s.level>=regions.length){s.phase=2;save();return render()}
-let [title,names]=regions[s.level],done=s.placements[s.level]||{},ref=visualRefs[s.level],spots=imagePoints[s.level],venous=s.level>=5,zoom=1,panX=0,panY=0,dragPoint=null,moving=false;
-const targetUI=()=>names.map((v,i)=>{let p=spots[i];return '<button class="mark hotspot '+(done[i]?'solved':'')+'" data-target="'+i+'" style="left:'+p[0]+'%;top:'+p[1]+'%" title="Posició '+(i+1)+'">'+(done[i]?'✓':'✚')+'</button>'}).join('');
-draw('<div class="stageHeader"><div><span class="eyebrow">Fase 01 · Atles interactiu</span><h1>'+title+'</h1><p>Identifica les estructures amb les làmines originals del RA2.</p></div><div class="levelCounter"><b>'+(s.level+1)+'</b><span>/ 09 nivells</span></div></div><div class="progressTrack"><span style="width:'+(s.level/9*100)+'%"></span></div><div class="grid visualGrid"><section class="card imageCard"><div class="mapTools"><span class="mapMeta">'+(venous?'🔵 Sistema venós':'🔴 Sistema arterial')+'</span><div class="zoomButtons"><button class="secondary" id="minus" aria-label="Allunya">−</button><button class="secondary" id="plus" aria-label="Amplia">+</button><button class="secondary" id="recenter" aria-label="Centra">⤢</button></div></div><div class="mapViewport" id="viewport"><div class="mapTransform" id="mapTransform"><img id="vascularMap" src="./assets/'+ref.file+'" alt="'+ref.caption+' · làmina de la presentació RA2" draggable="false"><div class="pointLayer">'+targetUI()+'</div></div><div class="imageFallback" id="imageFallback" hidden>Il·lustració original pendent de publicar a GitHub.<div class="fallbackFigure">'+figure+'</div></div></div><p class="sourceNote">Font: presentació RA2.2, diapositiva '+ref.source+' · '+ref.caption+'. <b>Amplia</b> per inspeccionar i <b>arrossega el fons</b> per moure’l.</p></section><section class="card answerCard"><span class="eyebrow">Laboratori vascular</span><h2>Arrossega les etiquetes</h2><p class="sub">Selecciona el nom i toca el marcador corresponent. Pots fer servir arrossegar i deixar anar.</p><div class="bank">'+names.map((v,i)=>done[i]?'':'<button data-chip="'+i+'" draggable="true">'+v+'</button>').join('')+'</div><div class="metricRow"><div><span>Encerts</span><strong>'+Object.keys(done).length+'/'+names.length+'</strong></div><div><span>Punts</span><strong>'+s.points+'</strong></div></div><p id="feedback" aria-live="polite"></p><div class="actions"><button class="secondary" id="hint">✦ Pista (−5)</button><button id="next" '+(Object.keys(done).length===names.length?'':'disabled')+'>Continua →</button></div><p class="sub">+10 encert · −3 error · +15 cada 3 encerts seguits</p></section></div>');
-const image=document.querySelector('#vascularMap'),viewport=document.querySelector('#viewport'),transform=document.querySelector('#mapTransform');
-image.onerror=()=>{image.hidden=true;document.querySelector('#imageFallback').hidden=false};const fitAtlas=()=>{const size=Math.floor(Math.min(viewport.clientWidth,viewport.clientHeight)*.97);transform.style.width=size+'px';transform.style.height=size+'px';};fitAtlas();window.onresize=fitAtlas;
-function apply(){transform.style.transform='translate(-50%,-50%) translate('+panX+'px,'+panY+'px) scale('+zoom+')'}
-function changeZoom(delta){zoom=Math.max(1,Math.min(3.4,+(zoom+delta).toFixed(2)));if(zoom===1){panX=0;panY=0}apply()}
-document.querySelector('#plus').onclick=()=>changeZoom(.35);
-document.querySelector('#minus').onclick=()=>changeZoom(-.35);
-document.querySelector('#recenter').onclick=()=>{zoom=1;panX=panY=0;apply()};
-viewport.onwheel=e=>{e.preventDefault();changeZoom(e.deltaY<0?.15:-.15)};
-viewport.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;dragPoint={x:e.clientX,y:e.clientY,ox:panX,oy:panY};moving=false});
-viewport.addEventListener('pointermove',e=>{if(!dragPoint||zoom<=1)return;let dx=e.clientX-dragPoint.x,dy=e.clientY-dragPoint.y;if(Math.abs(dx)+Math.abs(dy)>5)moving=true;panX=dragPoint.ox+dx;panY=dragPoint.oy+dy;apply()});
-viewport.addEventListener('pointerup',()=>{dragPoint=null});viewport.addEventListener('pointercancel',()=>{dragPoint=null});
-const attempt=(a,b)=>{if(a==null||done[b])return;if(a===b){done[b]=true;s.placements[s.level]=done;award(10);selected=null;phase1();feedback('✓ Molt bé! +10 punts')}else{award(-3);feedback('✗ Aquesta etiqueta no correspon al punt. −3 punts')}};
-document.querySelectorAll('[data-chip]').forEach(b=>{b.onclick=()=>{selected=+b.dataset.chip;document.querySelectorAll('[data-chip]').forEach(v=>v.classList.toggle('selected',v===b))};b.ondragstart=e=>e.dataTransfer.setData('text/plain',b.dataset.chip)});
-document.querySelectorAll('[data-target]').forEach(b=>{b.onclick=()=>attempt(selected,+b.dataset.target);b.ondragover=e=>e.preventDefault();b.ondrop=e=>{e.preventDefault();attempt(+e.dataTransfer.getData('text/plain'),+b.dataset.target)}});
-document.querySelector('#hint').onclick=()=>{let i=names.findIndex((_,j)=>!done[j]);if(i>=0){award(-5);feedback('Pista: el punt '+(i+1)+' és '+names[i])}};
-document.querySelector('#next').onclick=()=>{s.level++;selected=null;save();render()}
+ if(s.level>=regions.length){s.phase=2;save();return render()}
+ const [title,names]=regions[s.level],done=s.placements[s.level]||{},ven=s.level>=5;
+ const atlas=ven?'atlas_ven.webp':'atlas_art.webp';
+ const points=names.map(n=>vascularPositions[n+(ven&&['Renal','Ilíaca comuna','Femoral','Tibial anterior','Poplítia'].includes(n)?' (vena)':'')]||vascularPositions[n]);
+ const count=Object.keys(done).length,total=names.length;
+ draw('<div class="stageHeader"><div><span class="eyebrow">LABORATORI VASCULAR · FASE 01</span><h1>'+title+'</h1><p class="sub">Localitza els vasos i arrossega els noms sobre els marcadors.</p></div><div class="levelCounter"><b>'+(s.level+1)+'</b><span>/ 9 nivells</span></div></div><div class="progressTrack"><span style="width:'+(100*s.level/9)+'%"></span></div><div class="grid visualGrid"><section class="card imageCard"><div class="mapTools"><span class="mapMeta">'+(ven?'🔵 ATLES VENÓS':'🔴 ATLES ARTERIAL')+'</span><div class="zoomButtons"><button id="minus" class="secondary" aria-label="Redueix">−</button><button id="plus" class="secondary" aria-label="Amplia">+</button><button id="recenter" class="secondary" aria-label="Centra">⤢</button></div></div><div id="viewport" class="mapViewport"><div id="mapTransform" class="mapTransform"><img id="vascularMap" src="./assets/'+atlas+'" alt="Il·lustració anatòmica del sistema vascular, extreta del RA2" draggable="false"><div class="pointLayer">'+points.map((p,i)=>'<button class="mark hotspot '+(done[i]?'solved':'')+'" data-target="'+i+'" style="left:'+p[0]+'%;top:'+p[1]+'%" aria-label="Punt '+(i+1)+(done[i]?' identificat':' pendent')+'">'+(done[i]?'✓':(i+1))+'</button>').join('')+'</div></div></div><p class="sourceNote">Font: Atles vascular RA2.2 · Utilitza els botons +/− per fer zoom i mou la imatge per explorar-la.</p></section><section class="card answerCard"><span class="eyebrow">REPTE D’IDENTIFICACIÓ</span><h2>Arrossega les etiquetes</h2><p class="sub">Cada nom correspon a un únic marcador numerat. També pots seleccionar el nom i després clicar el marcador.</p><div class="metricRow"><div><span>Vasos identificats</span><strong>'+count+' / '+total+'</strong></div><div><span>Punts acumulats</span><strong>'+s.points+'</strong></div></div><div class="bank" id="nameBank">'+names.map((v,i)=>done[i]?'':'<button data-chip="'+i+'" draggable="true"><span class="bankNumber">'+(i+1)+'</span>'+v+'</button>').join('')+'</div><p id="feedback" aria-live="polite"></p><div class="actions"><button id="hint" class="secondary">✦ Pista (−5)</button><button id="next" '+(count===total?'':'disabled')+'>Següent nivell →</button></div><p class="sub">+10 encert · −3 error · +15 per cada 3 encerts seguits</p></section></div>');
+ const viewport=document.querySelector('#viewport'),transform=document.querySelector('#mapTransform'),image=document.querySelector('#vascularMap');
+ let zoom=1,panX=0,panY=0,pointer=null;
+ function apply(){transform.style.transform='translate(-50%,-50%) translate('+panX+'px,'+panY+'px) scale('+zoom+')'}
+ function fit(){const h=Math.max(550,viewport.clientHeight*.98);transform.style.height=h+'px';transform.style.width=Math.round(h*512/500)+'px';}
+ fit();apply();window.onresize=fit;
+ const change=d=>{zoom=Math.max(1,Math.min(3.5,+(zoom+d).toFixed(2)));if(zoom===1){panX=0;panY=0}apply()};
+ document.querySelector('#plus').onclick=()=>change(.32);document.querySelector('#minus').onclick=()=>change(-.32);
+ document.querySelector('#recenter').onclick=()=>{zoom=1;panX=0;panY=0;apply()};
+ viewport.addEventListener('wheel',e=>{e.preventDefault();change(e.deltaY<0?.16:-.16)},{passive:false});
+ viewport.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;pointer={x:e.clientX,y:e.clientY,panX,panY}});
+ viewport.addEventListener('pointermove',e=>{if(!pointer||zoom===1)return;panX=pointer.panX+e.clientX-pointer.x;panY=pointer.panY+e.clientY-pointer.y;apply()});
+ for(const ev of ['pointerup','pointercancel','pointerleave'])viewport.addEventListener(ev,()=>{pointer=null});
+ image.onerror=()=>{document.querySelector('#feedback').textContent='No s’ha pogut carregar l’atles. Actualitza la pàgina.'};
+ function attempt(choice,place){if(choice==null||done[place])return;if(choice===place){done[place]=true;s.placements[s.level]=done;award(10);selected=null;phase1();feedback('✓ Correcte! +10 punts')}else{award(-3);feedback('✗ Aquest nom no correspon al marcador. −3 punts')}}
+ document.querySelectorAll('[data-chip]').forEach(btn=>{btn.onclick=()=>{selected=Number(btn.dataset.chip);document.querySelectorAll('[data-chip]').forEach(e=>e.classList.toggle('selected',e===btn))};btn.ondragstart=e=>e.dataTransfer.setData('text/plain',btn.dataset.chip)});
+ document.querySelectorAll('[data-target]').forEach(btn=>{btn.onclick=()=>attempt(selected,Number(btn.dataset.target));btn.ondragover=e=>e.preventDefault();btn.ondrop=e=>{e.preventDefault();attempt(Number(e.dataTransfer.getData('text/plain')),Number(btn.dataset.target))}});
+ document.querySelector('#hint').onclick=()=>{const n=names.findIndex((_,i)=>!done[i]);if(n<0)return;award(-5);feedback('Pista: el marcador '+(n+1)+' correspon a '+names[n])};
+ document.querySelector('#next').onclick=()=>{s.level++;selected=null;save();render()}
 }
 function phase2(){if(s.q===20){s.phase=3;save();return render()}let [question,options,correct]=quiz[s.q],answer=s.answers[s.q];
 draw('<h1>Fase 2 · Test vascular</h1><p class="pill">Pregunta '+(s.q+1)+' / 20</p><section class="card"><h2>'+question+'</h2><div class="choices">'+options.map((o,i)=>'<button data-answer="'+i+'" '+(answer!=null?'disabled':'')+'>'+String.fromCharCode(65+i)+'. '+o+'</button>').join('')+'</div><p id="feedback"></p><button id="next" '+(answer==null?'disabled':'')+'>Continua →</button></section>');
