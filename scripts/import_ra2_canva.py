@@ -10,3 +10,5 @@ for item in sources:
     img=img.crop((int(a*w),int(b*h),int(c*w),int(d*h)))
     img.save("assets/"+item["name"],"WEBP",quality=88,method=6)
     print(item["name"],img.size)
+
+# Actualització per activar la importació automatitzada del material RA2.
