@@ -1,13 +1,13 @@
 export const regions=[
-['Artèries del tòrax',['Aorta ascendent','Arc aòrtic','Tronc braquiocefàlic','Artèria caròtida comuna','Artèria subclàvia']],
-['Artèries del cap i coll',['Caròtida interna','Caròtida externa','Artèria vertebral','Artèria basilar','Artèria facial']],
-['Artèries del braç',['Artèria axil·lar','Artèria braquial','Artèria radial','Artèria ulnar','Arc palmar superficial']],
-['Artèries abdominals',['Aorta abdominal','Tronc celíac','Artèria hepàtica comuna','Artèria renal','Artèria mesentèrica superior']],
-['Artèries de la cama',['Artèria ilíaca externa','Artèria femoral','Artèria poplítia','Artèria tibial anterior','Artèria pèdia']],
-['Venes del cap i tòrax',['Vena jugular interna','Vena jugular externa','Vena subclàvia','Vena cava superior','Vena àziga']],
-['Venes del braç',['Vena cefàlica','Vena basílica','Vena mitjana del colze','Vena axil·lar']],
-['Venes abdominals',['Vena cava inferior','Vena porta hepàtica','Vena renal','Vena ilíaca comuna']],
-['Venes de la cama',['Vena femoral','Vena poplítia','Vena safena magna','Vena safena menor']]];
+['Grans artèries del tòrax',['Artèria caròtida comuna','Arc aòrtic','Artèria subclàvia','Aorta toràcica']],
+['Artèries de l’extremitat superior',['Artèria axil·lar','Artèria braquial','Artèria radial','Artèria ulnar']],
+['Artèries de l’abdomen i la pelvis',['Aorta abdominal','Tronc celíac','Artèria renal','Artèria ilíaca comuna','Artèria ilíaca externa']],
+['Artèries de l’extremitat inferior',['Artèria femoral','Artèria poplítia','Artèria tibial anterior','Artèria tibial posterior','Artèria pèdia']],
+['Repte global: artèries principals',['Artèria caròtida comuna','Artèria subclàvia','Aorta abdominal','Artèria femoral','Artèria poplítia']],
+['Venes del cap, coll i tòrax',['Vena jugular interna','Vena jugular externa','Vena subclàvia','Vena braquiocefàlica','Vena cava superior']],
+['Venes de l’extremitat superior',['Vena cefàlica','Vena basílica','Vena mitjana del colze']],
+['Venes de l’abdomen i la pelvis',['Vena cava inferior','Vena renal','Vena ilíaca comuna']],
+['Venes de l’extremitat inferior',['Vena femoral','Vena poplítia','Vena safena magna','Vena tibial anterior','Arc venós dorsal']]];
 export const quiz=[
 ['Quin vas surt del ventricle dret?',['Aorta','Tronc pulmonar','Vena cava','Vena pulmonar'],1],
 ['Quina túnica vascular conté múscul llis?',['Íntima','Adventícia','Mitjana','Endocardi'],2],
