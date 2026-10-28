@@ -1,99 +1,40 @@
-# Fase 1 — Gràfics anatòmics, coordenades i usabilitat
+# Fase 1 — Gràfics, coordenades i usabilitat
 
-**Estat: necessita revisió final.** Aquest document registra els criteris que cal complir abans d'usar la fase 1 amb notes oficials. Actualització: 28/10/2026.
+**Actualització:** 28/10/2026 (versió 5).
 
-## Objectiu docent
+## Font gràfica
 
-L'alumne ha d'identificar **un vas sanguini real** sobre una il·lustració anatòmica fidel a la presentació «RA2.2. Vasos Sanguinis i Circulació (redisseny)», sense pistes involuntàries a la interfície. No ha de limitar-se a relacionar números iguals.
+- Diapositiva 56, «Atles Vascular del Cos Humà», de *RA2.2. Vasos Sanguinis i Circulació (redisseny)* (Canva `DAHYn8UO7FY`; PDF a Drive).
+- La diapositiva conté la clau oficial: 18 rètols arterials i 16 de venosos, cadascun unit per una línia guia a un punt negre.
+- Les làmines del joc són aquestes dues meitats sense rètols. Les altres miniatures regionals que hi havia a `assets/` s'han retirat: eren retalls de baixa resolució amb rètols visibles i no s'usaven.
 
-## Font gràfica i fitxers
+## Auditoria de punts: resolta
 
-- Presentació Canva: `DAHYn8UO7FY`, versió «redisseny».
-- PDF de Drive: `RA2.2.Vasos Sanguinis i Circulació (redisseny).pdf`.
-- Atles publicats: `assets/atlas_art.webp`, `assets/atlas_ven.webp`.
-- Altres fitxers regionals a `assets/`: aorta, cap, braç, abdomen, cames i xarxes venoses; no tots s'usen actualment.
-- Els atlas incorporen modificacions per amagar noms/respostes originals, però **encara cal comprovar que no es mostrin rètols reveladors ni es tallin estructures**.
-- La resolució, el contrast i el detall anatòmic han de ser suficients a 100%, 125%, 150% i zoom intern. No consta una homologació visual a les resolucions proposades.
-
-### Nivells actuals segons `data.js`
-
-| Nivell | Tipus | Descripció | Etiquetes/marcadors |
-| --- | --- | --- | ---: |
-| 1 | Artèries | Tronc, coll i grans artèries | 8 |
-| 2 | Artèries | Cap, coll i extremitat superior | 6 |
-| 3 | Artèries | Abdomen i pelvis | 7 |
-| 4 | Artèries | Extremitat inferior | 6 |
-| 5 | Artèries | Repte general de l'atles | 18 |
-| 6 | Venes | Cap, coll i retorn central | 6 |
-| 7 | Venes | Extremitat superior | 5 |
-| 8 | Venes | Abdomen i pelvis | 4 |
-| 9 | Venes | Repte general de l'atles | 16 |
-| | | **Total** | **76** |
-
-Són **76 col·locacions**, no 76 noms de vasos diferents: els nivells de repàs reutilitzen estructures.
-
-## Incidències detectades a partir del codi actual
-
-### P0 — Bloquegen l'avaluació
-
-- [ ] **Respostes revelades:** els botons del banc mostren un número `i+1` i els marcadors anatòmics mostren el mateix número. Un alumne pot encertar per coincidència de número sense conèixer l'anatomia. **Eliminar la coincidència**: fer servir identificadors interns opacs; remenar les opcions o mostrar icones no correlacionades.
-- [ ] **Precisió dels punts:** `vascularPositions` té coordenades percentuals assignades manualment; cal comprovar cada punt anatòmic i si s'associa al vas correcte. Registrar les correccions per nivell i vas, amb captura abans/després.
-- [ ] **Variants arterials i venoses:** diversos noms (`Renal`, `Femoral`, `Ilíaca comuna`, etc.) apareixen en tots dos sistemes. El codi utilitza sufixos `(vena)` per a alguns. Revisar la coherència d'aquesta correspondència i que cap punt venós empri inadvertidament una posició arterial.
-- [ ] **Escalat real:** l'atles està contingut en una imatge WebP amb bandes retallades visualment mitjançant CSS. Verificar coincidència exacta dels percentatges de `vascularPositions` amb la caixa de coordenades dibuixada.
-- [ ] **Contingut visible:** assegurar que tots els vasos requerits siguin representats i distinguibles; si no hi són, substituir la làmina regional i no mantenir una resposta impossible.
-- [ ] **Qualitat de l'avaluació:** no atribuir puntuació oficial fins que hi hagi revisió anatòmica i proves interactives satisfactòries.
-
-### P1 — Dificulten la usabilitat
-
-- [ ] **Densitat d'etiquetes:** nivells 5 (18) i 9 (16) han de mostrar-se sense saturació ni solapaments. Valorar agrupació per regió, llista amb scroll i assistència d'accessibilitat.
-- [ ] **Gestos al touchpad/ratolí:** cal provar `dragstart/drop` i selecció per dos clics en Chromium, Edge, Firefox i Chrome.
-- [ ] **Zoom i desplaçament:** comprovar que els marcadors es mantenen ancorats en el mateix vas en ampliar, reduir, recentrar i canviar la mida de la finestra.
-- [ ] **Feedback:** l'encert actual re-renderitza la fase i pot reiniciar l'ampliació. Afegir una confirmació visual no intrusiva abans de canviar la disposició, preservar zoom quan sigui raonable i suport a `prefers-reduced-motion`.
-- [ ] **Navegació:** el banc d'etiquetes no ha d'amagar els controls de següent nivell. Indicar clarament nombre de pendents i estat dels vasos.
-- [ ] **Contrast:** verificar WCAG AA per noms, marcadors, missatges i estats de focus; no dependre només del vermell/blau.
-
-### P2 — Poliment visual
-
-- [ ] Consolidar les **quatre capes d'estils** del fitxer `index.html` en un CSS coherent amb variables de disseny.
-- [ ] Substituir miniatures de baixa resolució per recursos nítids que no perdin llegibilitat a 2×–3.5×.
-- [ ] Revisar animacions d'encert/error, transicions, sons opcionals i microinteraccions sense alentir l'activitat.
-- [ ] Aplicar el mateix sistema de components visuals a login, test, 3D i resum.
-
-## Especificació d'usabilitat desktop/laptop
-
-### Distribució suggerida
-
-- **Desktop (≥ 1366 px):** dos panells simultanis. Atlas ampli i dominant (aprox. 60–65% de l'amplada disponible), etiquetes a la dreta (35–40%). Header amb email, fase, punts, ratxa i progrés.
-- **Laptop 1280×720:** evitar que la capçalera i el banc ocultin el dibuix. Panell d'etiquetes amb scroll independent. Controls de zoom sempre visibles.
-- **Laptop 1366×768:** comprovar una sessió real sencera sense scroll horitzontal i amb marcadors clicables.
-- **Desktop 1440×900 i 1920×1080:** garantir que els vasos i etiquetes no quedin excessivament petits; aprofitar espai amb zoom adequat.
-- **Pantalles amb escalat 125% i 150%:** provar que no hi ha solapaments, retalls ni pèrdua de punts.
-- **Tablet i mòbil:** ús secundari; mantenir clic en dues passes com a alternativa a drag-and-drop.
-
-### Matriu mínima de proves
-
-| Escenari | Resultat esperat |
+| Incidència anterior | Estat |
 | --- | --- |
-| 1280×720, zoom navegador 100% | Sense scroll horitzontal; tots els controls accessibles |
-| 1366×768, 100% i 125% | Mapa estable; les etiquetes no tapen el contingut |
-| 1440×900, 100% | Panells equilibrats; noms llegibles a distància |
-| 1920×1080, 100% i 150% | Contingut centrat, no estirat; punts precisos |
-| Zoom del mapa 1×, 2×, 3× | Cada marcador continua sobre el vas correcte |
-| Roda del ratolí i touchpad | Zoom controlable sense desplaçaments imprevisibles |
-| Arrossegar una resposta | Encert/errada correctament registrats |
-| Seleccionar nom + clicar marcador | Mateixa valoració que amb drag-and-drop |
-| Aconseguir 3 encerts seguits | Bonus +15, una sola vegada per cada triple |
-| Cometre un error i usar una pista | −3 o −5, ratxa reiniciada |
-| Acabar cada nivell | Exactament una resposta per marcador i habilitació de següent |
-| Recarregar i recuperar progrés | Persistència correcta al mateix navegador |
-| Canviar d'ordinador | No esperar sincronització: informar clarament |
+| Números del banc iguals als dels marcadors (filtració de respostes) | **Resolt.** El banc no té números; els noms es barregen i l'ordre queda fixat per sessió |
+| Coordenades estimades a mà (`vascularPositions`) | **Resolt.** Coordenades detectades automàticament dels punts de la làmina i associades a la clau per la línia guia |
+| Retall CSS de la imatge (`left:-66%`, `width:233%`) | **Resolt.** La imatge es mostra sencera; caselles, punts i línies comparteixen el mateix sistema de coordenades |
+| Variants arterials/venoses amb sufix «(vena)» | **Resolt.** Cada sistema té la seva làmina i els seus ids (`art-…`, `ven-…`) |
+| Vasos que no surten a la làmina | **Resolt.** Els nivells només poden usar noms de la clau; ho comprova `tests/check.mjs` |
+| Re-render en encertar que reiniciava el zoom | **Resolt.** L'encert actualitza només la casella i la línia |
 
-**Criteri d'acceptació:** cap error bloquejant P0; un docent valida els 76 punts en les seves làmines; totes les combinacions de resolució i interacció passen la prova; cap número/etiqueta revela la resposta; es completa una partida de prova sense bloquejos.
+Evidència: `docs/validacio/atlas_art.png` i `atlas_ven.png` (cada nom sobre el seu punt, amb l'ajust de la línia guia entre parèntesis). Ajust mínim: 0,82 (artèries) i 0,89 (venes).
 
-## Recomanació de refactorització
+## Proves fetes (Playwright, Chromium 153)
 
-Crear una configuració per nivell amb `asset`, `viewBox`/regió, `targets: [{id, acceptedNames, x, y}]` i un banc d'opcions **remenant les etiquetes**, independent de l'ordre dels marcadors. En lloc de mapes globals de noms, usar coordenades explícites per cada il·lustració. Separar CSS a `styles.css`; afegir un mode docent de calibratge de punts que no sigui accessible com a solució per l'alumne.
+| Escenari | Resultat |
+| --- | --- |
+| 1280×720, 1366×768, 1440×900, 1920×1080 | Sense scroll horitzontal; 0 caselles solapades |
+| 390×844 (mòbil) | Sense scroll horitzontal; làmina a dalt i panell a sota |
+| Arrossegar un nom fins a la casella | Encert registrat (+10) |
+| Tocar nom + casella equivocada | Error registrat (−3), ratxa a 0 |
+| Pista amb nom triat | Casella i punt en ocre, −5 |
+| Ampliar amb la roda sobre un vas i clicar-ne el punt | Encert registrat; els punts segueixen ancorats |
+| 9 nivells, 20 preguntes i 24 vasos del mapa mut | Partida completa fins a l'informe sense errors de consola |
 
-## Evidència necessària per tancar el punt
+## Pendent
 
-Per cada nivell: nom de la làmina i resolució; taula vaso→coordenada revisada; captura desktop amb els marcadors; llista de proves superades i nom/rol de la persona que valida. Sense aquestes evidències, **no marcar l'auditoria anatòmica com a finalitzada**.
+- **Resolució de les làmines.** Les fonts actuals són de 512 px d'amplada (ampliades a 1024 px amb suavitzat). Es veuen bé a 1× i correctes a 2×; per a 3× convé la diapositiva exportada en alta resolució. El connector de Canva no permet exportar aquest disseny i el PDF de Drive (23 MB) supera el límit de descàrrega del connector. Quan es tingui la imatge: desar-la a `assets/src/` i executar `python3 scripts/build_atlas.py` (el procés és independent de la resolució).
+- **Prova en aula real** amb trackpads i escalat del sistema al 125–150 %.
+- **Validació docent** de les dues làmines de `docs/validacio/` (signatura i data).

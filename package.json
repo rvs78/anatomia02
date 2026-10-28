@@ -1,0 +1,11 @@
+{
+  "name": "vascular-quest-ra2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/check.mjs",
+    "e2e": "python3 tests/e2e.py http://localhost:8000/ shots",
+    "atlas": "python3 scripts/build_atlas.py",
+    "serve": "python3 -m http.server 8000"
+  }
+}

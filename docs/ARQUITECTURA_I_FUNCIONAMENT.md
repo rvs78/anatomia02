@@ -1,125 +1,75 @@
-# Especificació tècnica i arquitectura — Vascular Quest RA2
+# Arquitectura i funcionament — Vascular Quest RA2
 
-> Document descriptiu del **codi real a `main`**, no una promesa de funcionalitats futures. Revisat el 28/10/2026.
+> Descriu el codi de `main`. Revisat el 28/10/2026 (versió 5).
 
-## 1. Identificació i desplegament
+## 1. Desplegament
 
-- Repositori: https://github.com/rvs78/anatomia02
-- Aplicació: https://rvs78.github.io/anatomia02/
-- Branca de publicació: `main` (GitHub Pages).
-- Pila: **HTML + CSS + JavaScript ES Modules**. No hi ha backend d'aplicació ni base de dades.
-- Model 3D: **Three.js 0.160.1**, importat dinàmicament des de jsDelivr; requereix connexió a Internet.
-- La contrasenya compartida es comprova al **navegador**: és una barrera d'entrada didàctica, **no** autenticació segura.
+- Repositori: https://github.com/rvs78/anatomia02 · Aplicació: https://rvs78.github.io/anatomia02/ (GitHub Pages, branca `main`).
+- Pila: HTML + CSS + JavaScript ES Modules, sense dependències d'execució ni backend. Només es carreguen de fora les tipografies (Google Fonts); sense connexió s'usen les del sistema.
+- GitHub Actions executa `node tests/check.mjs` a cada push.
 
-## 2. Estructura del repositori
+## 2. Fitxers
 
-| Element | Funció |
+| Fitxer | Funció |
 | --- | --- |
-| `index.html` | Carcassa HTML, navegació superior i diverses capes CSS de la interfície |
-| `game.js` | Login, estat local, fases, punts, mapa ampliable, test, escena 3D i resum |
-| `data.js` | `regions` (nivells i noms de vasos) i `quiz` (preguntes i resposta correcta) |
-| `assets/atlas_art.webp` | Atles arterial de la presentació/PDF del RA2, editat per ocultar etiquetes |
-| `assets/atlas_ven.webp` | Atles venós de la mateixa font, editat per ocultar etiquetes |
-| `assets/*.webp` | Altres reculls de làmines regionals, actualment **no utilitzats** per la fase 1 principal |
-| `scripts/import_ra2_canva.py` | Descàrrega de miniatures de Canva i tractament d'imatges |
-| `.github/workflows/import-ra2-assets.yml` | GitHub Action per executar la importació si es modifica el script o s'activa manualment |
-| `docs/` | Guia d'ús, especificació, auditoria gràfica i pla de feina |
+| `index.html` | Carcassa: capçalera (fases, punts, ratxa) i `<main id="app">` |
+| `styles.css` | Sistema visual únic (tokens de color, tipografia, làmina, panell, test, informe, impressió) |
+| `game.js` | Estat, entrada, làmina amb zoom/desplaçament, fases 1–3 i informe |
+| `logic.js` | Funcions pures: normalització, comparació de noms, barreja, puntuació, estrelles |
+| `data.js` | `LEVELS` (nivells per noms), `QUIZ` (banc de 44 preguntes amb explicació), `SYNONYMS` |
+| `atlas-data.js` | **Generat.** Coordenades de cada vas i de la seva casella + clau de noms |
+| `assets/src/atlas_*.png` | Làmines font (meitats de la diapositiva 56 sense rètols) |
+| `assets/atlas_*.webp` | Làmines publicades (sense claudàtors, fons netejat) |
+| `scripts/build_atlas.py` | Detecció de punts i claudàtors, assignació per línia guia, neteja i evidències |
+| `tests/check.mjs` | 328 comprovacions de coherència |
+| `tests/e2e.py` | Partida completa al navegador (Playwright) i proves de resolució |
+| `docs/validacio/*.png` | Làmines amb cada nom sobre el seu punt i l'ajust de la línia guia |
 
-### Advertiment de manteniment dels recursos
+## 3. Dades anatòmiques
 
-La importació automàtica usa **URLs de Canva signades i temporals**, que poden caducar. **Tornar a executar aquest workflow pot sobreescriure** `assets/atlas_art.webp` i `assets/atlas_ven.webp` amb miniatures diferents de les dues imatges finals preparades manualment des del PDF. Abans de reexecutar-lo, cal refactoritzar la importació per preservar els recursos finals i emprar una font estable i autoritzada. No s'ha de confondre el workflow actual amb un pipeline de producció segur.
-
-## 3. Model de dades
-
-`data.js` exporta:
-
-- `regions`: array de **9 elements** amb un títol de nivell i un array de noms. Actualment hi ha **76 col·locacions** en total: `[8,6,7,6,18,6,5,4,16]`. **No són 76 vasos únics**, perquè hi ha repeticions per reforç.
-- `quiz`: **20 elements** amb enunciat, quatre alternatives i índex de resposta correcta.
-
-`game.js` conserva un objecte d'estat sota la clau `localStorage['ap-ra2-vascular-v4']`, que inclou:
+Cada objectiu d'`ATLAS[sistema].targets` té:
 
 ```js
-{
-  email, phase, level, q, points, streak,
-  correct, errors, hints,
-  placements, answers, model,
-  start
-}
+{ id: 'art-07', name: 'Radial', side: 'L', slotX: 27.93, slotY: 46.9, x: 37.03, y: 41.92, fit: 0.97 }
 ```
 
-- `phase`: 0 (login), 1 (atles), 2 (test), 3 (3D), 4 (resum).
-- `level`: índex del nivell del mapa, de 0 a 8.
-- `placements[level][i]`: punts del nivell resolts.
-- `q` i `answers`: progrés del test.
-- `model[i]`: punts del model 3D resolts.
-- `correct`, `errors`, `hints`, `points`, `streak`: comptadors totals.
+- `x, y`: centre del punt negre del vas (% de la làmina).
+- `slotX, slotY`: claudàtor original del rètol, on es dibuixa la casella.
+- `fit`: proporció de píxels de línia guia entre claudàtor i punt (mínim exigit 0,75; actual ≥ 0,82).
 
-La persistència és local; **no hi ha validació contra el domini ISVH més enllà d'una expressió regular**, ni contrasenyes individuals, ni sincronització entre dispositius.
+Els nivells referencien vasos **per nom**; `tests/check.mjs` verifica que cada nom existeix a la làmina del seu sistema, que no hi ha duplicats i que tots els vasos surten en algun nivell regional.
 
-## 4. Mecàniques de les fases
+### Regenerar les làmines
 
-### Fase 1 — mapa
+1. Desa les meitats esquerra (artèries) i dreta (venes) de la diapositiva 56, **sense rètols**, com a `assets/src/atlas_art.png` i `assets/src/atlas_ven.png`. Qualsevol resolució serveix.
+2. `python3 scripts/build_atlas.py`. Si no troba exactament 18 i 16 punts i claudàtors, o una línia guia és dubtosa, s'atura amb un missatge.
+3. Revisa `docs/validacio/` i executa `node tests/check.mjs`.
 
-- Les primeres **5 regions són arterials** i les darreres **4 venoses**.
-- A cada nivell es renderitza l'atles corresponent amb botons de posició, calculats a partir de `vascularPositions`.
-- El conjunt de noms i marcadors es genera amb `names.map(...)`; per tant, el nombre és 1:1 dins de cada nivell.
-- Entrada: `dragstart` → `drop` o selecció de nom → clic al marcador.
-- En encert: `placements` registra la resposta, s'atorguen punts i desapareix el nom pendent.
-- En error: penalització i possibilitat de reintentar.
-- Zoom: botons, roda i desplaçament; CSS de la imatge i de l'overlay a `index.html`.
+## 4. Estat i persistència
 
-**Defecte funcional pendent (P0):** el banc mostra números d'ordre que coincideixen directament amb l'índex dels marcadors, de manera que es poden deduir respostes sense identificar el vas. Cal desacoblar ordre visual i ID correcte abans de considerar qualificable la fase.
+`localStorage['ap-ra2-vascular-v5']`:
 
-**Defecte pedagògic pendent (P0):** `vascularPositions` encara necessita auditoria individual sobre les làmines, especialment venes i variants de nom, a totes les resolucions.
-
-### Fase 2 — qüestionari
-
-- Cada pregunta té **una única opció vàlida**.
-- Una vegada marcada, es registra el resultat, es bloquegen les alternatives i apareix `Continua`.
-- No hi ha randomització ni banc de versions del test.
-
-### Fase 3 — 3D
-
-- `markers` es construeix agafant les **primeres 15 entrades arterials** i les **primeres 15 venoses** de les regions, aplanades. Pot haver-hi **vasos repetits**.
-- L'escena 3D utilitza geometries primitives (esferes, cilindres) i punts disposats per una **fórmula d'índex**, no per coordenades reals d'un model anatòmic.
-- S'interactua amb `raycasting` de Three.js; zoom amb roda i rotació amb el ratolí.
-- `normalize` ignora accents i majúscules i contempla algunes equivalències, **no** un diccionari exhaustiu català/castellà.
-- En fallar la càrrega de Three.js, hi ha un selector alternatiu per número.
-
-### Puntuació
-
-`award(n)` aplica **+10** encert, **−3** error, **−5** pista. La puntuació mínima és 0; cada **3 encerts consecutius** afegeix **+15**. Errors i pistes reinicien la ratxa, compartida entre fases. El valor `correct` és el total de respostes correctes, no el nombre de vasos únics.
-
-## 5. Resum i entrega
-
-- `finish()` mostra un informe HTML amb els totals.
-- `Desa PDF` crida `window.print()`: el PDF **només s'obté si l'usuari selecciona guardar com a PDF**.
-- `Prepara correu` obre un `mailto:` cap a `ruben.vallejo@isvh.cat` amb assumpte/cos.
-- **No s'adjunta cap PDF automàticament, no s'envia cap correu des del servidor, no es desa en Drive i no es genera un Sheet**.
-- La recollida posterior a Gmail/Drive/Sheets pertany a un altre agent o procediment.
-
-## 6. Desenvolupament i execució local
-
-```bash
-git clone https://github.com/rvs78/anatomia02.git
-cd anatomia02
-python3 -m http.server 8000
+```js
+{ v:5, email, phase /*1 atles, 2 test, 3 mapa, 4 informe*/, start, end,
+  points, streak, correct, errors, hints, phasePts:{1,2,3},
+  p1:{ level, placed:{[nivell]:{[id]:true}}, stats:{[nivell]:{errors,hints,ms,stars}}, bank:{[nivell]:[noms barrejats]} },
+  p2:{ order:[índexs], perm:{[q]:[ordre opcions]}, i, answers:{} },
+  p3:{ order:[ids], i, tries, hinted, results:{[id]:'ok'|'retry'|'miss'} },
+  review:{ atlas:{[nom]:vegades}, quiz:[índexs], map:[ids] } }
 ```
 
-Obre `http://localhost:8000` (els mòduls JS no s'han de provar fent doble clic a l'HTML si el navegador bloqueja els imports locals).
+L'ordre del banc, de les preguntes i de les opcions es fixa en començar i es desa: recarregar no permet tornar a sortejar.
 
-Per a qualsevol canvi de `data.js` o `vascularPositions`:
+## 5. Mecàniques
 
-1. Validar que totes les entrades tenen coordenades compatibles amb l'atles actiu.
-2. Comprovar que els noms correctes no es filtren per números/ordre visual o etiquetes impreses.
-3. Fer proves en totes les resolucions del [protocol de QA](FASE1_GRAFICS_I_USABILITAT.md).
-4. Considerar la compatibilitat de l'estat local anterior abans de canviar els nivells (clau `-v4`).
-5. Publicar i verificar `main` i el desplegament de Pages.
+**Fase 1.** La làmina és un element amb les caselles i els punts en coordenades percentuals; el zoom (1×–3×, botons i roda centrada al cursor) i el desplaçament transformen tot el conjunt, de manera que res es desalinea. L'arrossegament usa *pointer events* (ratolí, trackpad i tàctil); alternativa: tocar el nom i després la casella o el punt; també amb teclat (Tab + Enter). Els noms del banc no porten cap número. Un encert no redibuixa la pantalla: s'omple la casella, s'il·lumina la línia guia del color del sistema i es conserva el zoom. La pista demana triar un nom i n'assenyala la casella (−5).
 
-## 7. Fonts didàctiques
+**Fase 2.** 20 preguntes de `QUIZ` a l'atzar, opcions barrejades, tecles 1–4, explicació després de respondre.
 
-- Canva: **RA2.2. Vasos Sanguinis i Circulació (redisseny)**, disseny `DAHYn8UO7FY`.
-- PDF homònim a Drive: https://drive.google.com/file/d/1kjTjWhJPGIaM-jAHz2pQxiU-tU1qnu2Z/view
-- Els gràfics distribuïts en el repositori s'han d'utilitzar respectant els drets de la font original. **La presència al repositori no equival a una llicència de redistribució verificada**.
+**Fase 3 (Mapa mut).** Substitueix l'antic «explorador 3D», que era una figura de primitives amb punts posats per fórmula i, per tant, no podia ser exacte. Ara s'assenyala un vas real de la làmina i s'escriu el nom. `matchName` ignora majúscules, accents, l·l, prefixos («artèria», «vena»), lateralitat i accepta sinònims (`SYNONYMS`, català i castellà) i una errada tipogràfica en noms de 7 o més lletres.
 
-Per al risc actual, consulta [ESTAT_I_PENDENTS.md](ESTAT_I_PENDENTS.md).
+**Puntuació** (`logic.js`): +10 / −3 / −5; cada 3 encerts seguits +15; ratxa global; mínim 0.
+
+## 6. Informe i lliurament
+
+Mostra punts totals i per fase, estrelles/errors/pistes/temps per nivell i la llista de repàs (noms mal col·locats, vasos no reconeguts, preguntes fallades). «Desa l'informe en PDF» obre la impressió del navegador amb un full net. «Obre un correu al professor» prepara un `mailto:` amb el resum; **el PDF s'adjunta manualment**. No hi ha enviament automàtic ni connexió amb Drive o Sheets.
