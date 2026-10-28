@@ -1,11 +1,11 @@
 # Arquitectura i funcionament — Vascular Quest RA2
 
-> Descriu el codi de `main`. Revisat el 28/10/2026 (versió 5).
+> Descriu el codi de `main`. Revisat el 28/10/2026 (versió 5.1, «àlbum de cromos»).
 
 ## 1. Desplegament
 
 - Repositori: https://github.com/rvs78/anatomia02 · Aplicació: https://rvs78.github.io/anatomia02/ (GitHub Pages, branca `main`).
-- Pila: HTML + CSS + JavaScript ES Modules, sense dependències d'execució ni backend. Només es carreguen de fora les tipografies (Google Fonts); sense connexió s'usen les del sistema.
+- Pila: HTML + CSS + JavaScript ES Modules, sense dependències d'execució ni backend ni recursos externs (tipografies incloses al repositori).
 - GitHub Actions executa `node tests/check.mjs` a cada push.
 
 ## 2. Fitxers
@@ -13,8 +13,12 @@
 | Fitxer | Funció |
 | --- | --- |
 | `index.html` | Carcassa: capçalera (fases, punts, ratxa) i `<main id="app">` |
-| `styles.css` | Sistema visual únic (tokens de color, tipografia, làmina, panell, test, informe, impressió) |
-| `game.js` | Estat, entrada, làmina amb zoom/desplaçament, fases 1–3 i informe |
+| `styles.css` | Sistema visual «àlbum de cromos» (tokens, cromos, forats, sobre, test, informe, impressió) — vegeu `DESIGN.md` |
+| `game.js` | Estat, entrada, sobre d'instruccions, làmina amb zoom/desplaçament, fases 1–3 i informe |
+| `fx.js` | Moviment (vol del cromo, rebot, brillantor, espurnes, segells, bàner) i so sintetitzat amb Web Audio; segur sense navegador |
+| `assets/fonts/` | Big Shoulders Display i Atkinson Hyperlegible (OFL), servides localment |
+| `assets/tutorial.mp4`, `tutorial.jpg` | Vídeo «Com es juga» del sobre de la fase 1 |
+| `video/` | Projecte Remotion que genera el vídeo (`npm run render`) |
 | `logic.js` | Funcions pures: normalització, comparació de noms, barreja, puntuació, estrelles |
 | `data.js` | `LEVELS` (nivells per noms), `QUIZ` (banc de 44 preguntes amb explicació), `SYNONYMS` |
 | `atlas-data.js` | **Generat.** Coordenades de cada vas i de la seva casella + clau de noms |
@@ -50,7 +54,7 @@ Els nivells referencien vasos **per nom**; `tests/check.mjs` verifica que cada n
 `localStorage['ap-ra2-vascular-v5']`:
 
 ```js
-{ v:5, email, phase /*1 atles, 2 test, 3 mapa, 4 informe*/, start, end,
+{ v:5, email, seen:{[fase]:true}, phase /*1 atles, 2 test, 3 mapa, 4 informe*/, start, end,
   points, streak, correct, errors, hints, phasePts:{1,2,3},
   p1:{ level, placed:{[nivell]:{[id]:true}}, stats:{[nivell]:{errors,hints,ms,stars}}, bank:{[nivell]:[noms barrejats]} },
   p2:{ order:[índexs], perm:{[q]:[ordre opcions]}, i, answers:{} },
@@ -62,7 +66,9 @@ L'ordre del banc, de les preguntes i de les opcions es fixa en començar i es de
 
 ## 5. Mecàniques
 
-**Fase 1.** La làmina és un element amb les caselles i els punts en coordenades percentuals; el zoom (1×–3×, botons i roda centrada al cursor) i el desplaçament transformen tot el conjunt, de manera que res es desalinea. L'arrossegament usa *pointer events* (ratolí, trackpad i tàctil); alternativa: tocar el nom i després la casella o el punt; també amb teclat (Tab + Enter). Els noms del banc no porten cap número. Un encert no redibuixa la pantalla: s'omple la casella, s'il·lumina la línia guia del color del sistema i es conserva el zoom. La pista demana triar un nom i n'assenyala la casella (−5).
+**Sobre d'instruccions.** La primera vegada que s'entra a cada fase s'obre un sobre amb tres fitxes (i el vídeo a la fase 1). Es tanca amb «Comença» o Esc i queda registrat a `s.seen[fase]`.
+
+**Fase 1.** Clic o deixar anar sobre un punt de vas resol al punt actiu més proper (alguns punts són a 12 px, com l'aorta toràcica i el tronc celíac). Mentre un cromo vola, s'ignoren altres intents. La làmina és un element amb les caselles i els punts en coordenades percentuals; el zoom (1×–3×, botons i roda centrada al cursor) i el desplaçament transformen tot el conjunt, de manera que res es desalinea. L'arrossegament usa *pointer events* (ratolí, trackpad i tàctil); alternativa: tocar el nom i després la casella o el punt; també amb teclat (Tab + Enter). Els noms del banc no porten cap número. Un encert no redibuixa la pantalla: s'omple la casella, s'il·lumina la línia guia del color del sistema i es conserva el zoom. La pista demana triar un nom i n'assenyala la casella (−5).
 
 **Fase 2.** 20 preguntes de `QUIZ` a l'atzar, opcions barrejades, tecles 1–4, explicació després de respondre.
 

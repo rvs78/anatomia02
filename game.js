@@ -154,7 +154,7 @@ function intro(phase) {
   const onKey = e => { if (e.key === 'Escape') close(); };
   document.addEventListener('keydown', onKey);
   $('#intro-go', wrap).onclick = close;
-  $('#intro-go', wrap).focus();
+  $('#intro-go', wrap).focus({ preventScroll: true });
   fx.sound.play('open');
   if (fx.reduced()) return;
   const env = $('.envelope', wrap), ease = 'cubic-bezier(0.16, 1, 0.3, 1)';

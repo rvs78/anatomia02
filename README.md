@@ -2,6 +2,8 @@
 
 Aplicació web en català per al CFGS d'Anatomia Patològica i Citodiagnòstic (mòdul d'Anatomia Humana). L'alumnat identifica artèries i venes **sobre la mateixa làmina que es treballa a classe**: la diapositiva «Atles Vascular del Cos Humà» de la presentació *RA2.2. Vasos Sanguinis i Circulació (redisseny)*.
 
+Té forma d'**àlbum de cromos**: cada nivell és una pàgina i cada nom és un cromo que s'enganxa al seu forat, amb animacions i sons en encerts, errors i ratxes, i un sobre d'instruccions amb vídeo al començament de cada fase. Disseny i moviment: [DESIGN.md](DESIGN.md).
+
 **Accés:** https://rvs78.github.io/anatomia02/
 
 ## Recorregut
@@ -14,6 +16,8 @@ Aplicació web en català per al CFGS d'Anatomia Patològica i Citodiagnòstic (
 | **Informe** | Punts per fase, estrelles i temps per nivell, llista de repàs; PDF des del navegador i correu preparat | — |
 
 **Puntuació:** +10 encert · −3 error · −5 pista · +15 per cada 3 encerts seguits. La puntuació no baixa de 0.
+
+**So:** efectes curts sintetitzats al navegador, activats per defecte i amb botó de silenci a la capçalera.
 
 ## Exactitud anatòmica
 
@@ -31,8 +35,9 @@ Els punts de joc **no es col·loquen a mà**: `scripts/build_atlas.py` detecta a
 ```bash
 python3 -m http.server 8000      # obre http://localhost:8000
 node tests/check.mjs             # coherència de dades, clau i puntuació (també a GitHub Actions)
-python3 tests/e2e.py             # partida completa amb Playwright i captures a 4 resolucions
+python3 tests/e2e.py             # partida completa amb Playwright i captures a 5 resolucions
 python3 scripts/build_atlas.py   # regenera atles i coordenades des d'assets/src/
+cd video && npm i && npm run render   # regenera el vídeo «Com es juga» (Remotion)
 ```
 
 Accés: correu `@isvh.cat` i contrasenya comuna d'aula. És una barrera d'entrada, no una autenticació. El progrés es desa al `localStorage` del navegador.

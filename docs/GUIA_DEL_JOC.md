@@ -11,11 +11,15 @@
 
 El progrés es desa **només en aquest navegador**. Si canvies d'ordinador, fas servir una finestra privada o esborres les dades del navegador, començaràs de nou. El botó **Surt** esborra el progrés.
 
+## Abans de cada fase
+
+S'obre un sobre amb les instruccions (a la fase 1, amb un vídeo curt). Prem **Comença** o la tecla Esc per tancar-lo. Els sons es poden apagar amb el botó de l'altaveu de la capçalera.
+
 ## Fase 1 · Atles
 
-És la làmina «Atles Vascular del Cos Humà» de classe, amb les caselles buides.
+És la làmina «Atles Vascular del Cos Humà» de classe, convertida en una pàgina d'àlbum: els noms són cromos i les caselles buides són forats.
 
-1. Arrossega cada nom de la llista fins a la seva casella o fins al punt negre del vas.
+1. Arrossega cada cromo del munt fins al seu forat o fins al punt negre del vas. Si encertes, s'enganxa; si no, rebota i torna al munt.
 2. També pots tocar un nom (queda marcat en ocre) i després tocar la casella.
 3. Amb el teclat: Tab per anar als noms, Enter per triar-ne un, Tab fins a la casella i Enter.
 4. Amplia amb **+**, **−** o la roda del ratolí; quan està ampliada, arrossega el fons per moure-la. **⤢** la torna a ajustar.
