@@ -15,4 +15,30 @@ body{background:radial-gradient(ellipse at 20% 0%,#163e55 0%,#071624 54%);min-he
 .mapTransform img{width:100%;height:100%;max-height:none;max-width:none;object-fit:contain}
 .mapTransform .pointLayer{inset:0}
 @media(max-width:700px){.mapTransform{width:min(100%, 420px);height:min(100%, 420px)}}
+</style><style>
+/* Vascular Quest Desktop Classroom UI v4 */
+:root{--vq-teal:#44dbc8;--vq-night:#071929;--vq-panel:#102c43;--vq-stroke:#2d5871}
+body{background:radial-gradient(ellipse at 55% -25%,#1c526b 0%,#0a2134 49%,#061523 100%);color:#edf9ff}
+header{padding:15px max(26px,calc((100vw - 1450px)/2));box-shadow:0 5px 30px #04111c66}
+main{max-width:1500px;padding:22px 30px}
+.visualGrid{grid-template-columns:minmax(600px,1.7fr) minmax(365px,.9fr);gap:22px;align-items:start}
+.card{border-radius:22px;border:1px solid #356780;background:linear-gradient(150deg,#15394f 0%,#102a40 100%);box-shadow:0 20px 55px #04132175}
+.stageHeader{margin-top:6px}.stageHeader h1{font-size:clamp(30px,3vw,45px);line-height:1.08}
+.mapViewport{height:690px;min-height:690px;border:1px solid #8fb3c2;background:linear-gradient(125deg,#dfedef,#b9d5db);touch-action:none}
+.mapTransform{position:absolute;top:50%;left:50%;overflow:hidden;transform-origin:center center;display:block}
+.mapTransform img{position:absolute;top:0;left:-66.67%;width:233.8%;height:100%;max-width:none;max-height:none;object-fit:fill;user-select:none;pointer-events:none;filter:contrast(1.1) saturate(1.18)}
+.mapTransform .pointLayer{position:absolute;inset:0;pointer-events:none}
+.mapTransform .pointLayer .hotspot{pointer-events:auto}
+.hotspot{min-width:33px;min-height:33px;width:33px;height:33px;font-size:12px;border:2px solid #1fefe0;background:#07374be8;color:white;box-shadow:0 0 0 5px #14cbd443,0 3px 10px #06203591;cursor:pointer}
+.hotspot.solved{background:#086c4e;border-color:#9dfbe4}
+.bank{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:500px;overflow:auto;padding:4px}
+.bank button{display:flex;align-items:center;gap:9px;min-height:49px;padding:9px 10px;font-size:13px;border:1px solid #467388}
+.bank button.selected{background:#116858;border-color:#99ffe6}
+.bankNumber{display:inline-grid;place-items:center;flex-shrink:0;min-width:23px;height:23px;border-radius:7px;background:#4b8596;color:white;font-size:11px;font-weight:800}
+.answerCard{position:sticky;top:86px;padding:24px}
+.answerCard h2{font-size:26px}.metricRow{margin:17px 0}
+#feedback{min-height:45px;color:#87f5d9;font-weight:700}
+.mapTools{padding:8px 10px 17px}.zoomButtons button{min-width:42px;padding:9px}
+@media(max-width:1050px){.visualGrid{grid-template-columns:1fr}.answerCard{position:static}.mapViewport{height:620px;min-height:620px}.bank{grid-template-columns:repeat(3,1fr);max-height:none}main{padding:20px}}
+@media(max-width:640px){.mapViewport{height:520px;min-height:520px}.bank{grid-template-columns:1fr 1fr}.bank button{font-size:12px}.visualGrid{grid-template-columns:minmax(0,1fr)}.stageHeader{gap:9px}.stageHeader h1{font-size:28px}}
 </style></head><body><header><strong>🫀 VASCULAR QUEST · RA2</strong><span id="status">Anatomia Humana</span></header><main id="app"></main><script type="module" src="./game.js"></script></body></html>
