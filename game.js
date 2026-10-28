@@ -10,26 +10,26 @@ function login(){draw('<section class="card hero"><div class="pill">Anatomia Hum
 const figure='<svg viewBox="0 0 100 110" aria-label="Silueta corporal esquemàtica"><g fill="#789eaf" opacity=".7"><ellipse cx="50" cy="10" rx="8" ry="9"/><path d="M45 20L30 25L18 54L23 57L34 33L39 57L40 70L37 102L46 103L50 75L54 103L63 102L60 70L61 57L66 33L77 57L82 54L70 25L55 20Z"/></g><path d="M48 21V60L44 99M52 21V60L57 99M48 28L32 34L23 56M52 28L68 34L77 56" stroke="#f36476" stroke-width="1.4" fill="none"/></svg>';
 const positions=[[49,29],[48,23],[44,20],[52,15],[36,29],[49,12],[44,14],[55,15],[51,8],[45,10],[32,36],[27,47],[25,59],[31,59],[26,69],[50,45],[46,43],[45,48],[56,49],[50,53],[43,62],[42,73],[42,84],[42,92],[42,97],[52,14],[57,17],[63,28],[54,29],[55,38],[70,43],[67,46],[69,53],[68,36],[55,48],[55,47],[59,45],[58,51],[56,61],[59,74],[59,84],[64,85],[57,91]];
 const visualRefs=[
-{file:'aorta.webp',source:17,caption:'Aorta i grans vasos toràcics'},
-{file:'head.webp',source:22,caption:'Arbre arterial de cap i coll'},
-{file:'arm.webp',source:29,caption:'Artèries de braç i avantbraç'},
-{file:'abdomen.webp',source:34,caption:'Branques de l’aorta abdominal'},
-{file:'legs.webp',source:38,caption:'Eix arterial de les extremitats inferiors'},
-{file:'venous_head.webp',source:44,caption:'Venes cervicals i centrals'},
-{file:'venous_arm.webp',source:46,caption:'Retorn venós de l’extremitat superior'},
-{file:'venous_abdomen.webp',source:42,caption:'Retorn venós del tòrax i de l’abdomen'},
-{file:'venous_legs.webp',source:48,caption:'Sistema venós de l’extremitat inferior'}
+{file:'atlas_art.webp',source:56,caption:'Grans vasos arterials del cos'},
+{file:'atlas_art.webp',source:56,caption:'Artèries de les extremitats superiors'},
+{file:'atlas_art.webp',source:56,caption:'Artèries viscerals i ilíaques'},
+{file:'atlas_art.webp',source:56,caption:'Artèries de les extremitats inferiors'},
+{file:'atlas_art.webp',source:56,caption:'Atles arterial complet'},
+{file:'atlas_ven.webp',source:56,caption:'Venes del cap i tòrax'},
+{file:'atlas_ven.webp',source:56,caption:'Venes del membre superior'},
+{file:'atlas_ven.webp',source:56,caption:'Venes abdominals'},
+{file:'atlas_ven.webp',source:56,caption:'Venes del membre inferior'}
 ];
 const imagePoints=[
-[[53,48],[51,38],[47,34],[45,19],[70,32]],
-[[49,42],[55,43],[50,49],[52,30],[41,45]],
-[[48,20],[45,41],[42,70],[65,71],[39,93]],
-[[51,31],[48,29],[40,35],[54,53],[51,62]],
-[[51,35],[58,48],[56,65],[50,78],[47,92]],
-[[48,35],[56,36],[62,46],[51,53],[54,61]],
-[[52,53],[42,54],[50,64],[49,45]],
-[[51,43],[50,57],[56,62],[51,79]],
-[[50,38],[50,62],[47,72],[58,83]]
+[[49,20],[54,26],[42,28],[53,43]],
+[[30,37],[27,48],[26,59],[33,58]],
+[[53,53],[51,47],[61,52],[53,64],[48,70]],
+[[49,77],[49,85],[47,91],[55,92],[48,97]],
+[[49,20],[42,28],[53,53],[49,77],[49,85]],
+[[49,20],[43,21],[41,28],[52,29],[54,38]],
+[[35,37],[42,44],[38,52]],
+[[51,49],[59,55],[54,66]],
+[[53,74],[50,85],[59,80],[52,91],[47,96]]
 ];
 function phase1(){
 if(s.level>=regions.length){s.phase=2;save();return render()}
