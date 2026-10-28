@@ -1,5 +1,5 @@
 import {regions,quiz} from './data.js';
-const el=document.querySelector('#app'),status=document.querySelector('#status'),KEY='ap-ra2-vascular-v2';
+const el=document.querySelector('#app'),status=document.querySelector('#status'),KEY='ap-ra2-vascular-v3';
 const init=()=>({email:'',phase:0,level:0,q:0,points:0,streak:0,correct:0,errors:0,hints:0,placements:{},answers:{},model:{},start:new Date().toISOString()});
 let s;try{s=JSON.parse(localStorage.getItem(KEY))||init()}catch{s=init()}
 let selected=null,dispose=()=>{};const save=()=>localStorage.setItem(KEY,JSON.stringify(s));
