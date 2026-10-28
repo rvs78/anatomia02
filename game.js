@@ -21,15 +21,15 @@ const visualRefs=[
 {file:'atlas_ven.webp',source:56,caption:'Venes del membre inferior'}
 ];
 const imagePoints=[
-[[49,20],[54,26],[42,28],[53,43]],
-[[30,37],[27,48],[26,59],[33,58]],
-[[53,53],[51,47],[61,52],[53,64],[48,70]],
-[[49,77],[49,85],[47,91],[55,92],[48,97]],
-[[49,20],[42,28],[53,53],[49,77],[49,85]],
-[[49,20],[43,21],[41,28],[52,29],[54,38]],
-[[35,37],[42,44],[38,52]],
-[[51,49],[59,55],[54,66]],
-[[53,74],[50,85],[59,80],[52,91],[47,96]]
+[[49,20],[48,25],[44,25],[50,40]],
+[[36,30],[33,42],[30,55],[37,55]],
+[[50,51],[51,47],[55,51],[49,63],[46,68]],
+[[45,72],[46,80],[45,87],[53,89],[45,96]],
+[[49,20],[44,25],[50,51],[45,72],[46,80]],
+[[49,20],[54,21],[44,27],[52,27],[51,35]],
+[[35,34],[45,38],[39,48]],
+[[52,45],[57,51],[50,63]],
+[[47,72],[47,81],[53,87],[46,90],[47,97]]
 ];
 function phase1(){
 if(s.level>=regions.length){s.phase=2;save();return render()}
@@ -38,7 +38,7 @@ const targetUI=()=>names.map((v,i)=>{let p=spots[i];return '<button class="mark 
 draw('<div class="stageHeader"><div><span class="eyebrow">Fase 01 · Atles interactiu</span><h1>'+title+'</h1><p>Identifica les estructures amb les làmines originals del RA2.</p></div><div class="levelCounter"><b>'+(s.level+1)+'</b><span>/ 09 nivells</span></div></div><div class="progressTrack"><span style="width:'+(s.level/9*100)+'%"></span></div><div class="grid visualGrid"><section class="card imageCard"><div class="mapTools"><span class="mapMeta">'+(venous?'🔵 Sistema venós':'🔴 Sistema arterial')+'</span><div class="zoomButtons"><button class="secondary" id="minus" aria-label="Allunya">−</button><button class="secondary" id="plus" aria-label="Amplia">+</button><button class="secondary" id="recenter" aria-label="Centra">⤢</button></div></div><div class="mapViewport" id="viewport"><div class="mapTransform" id="mapTransform"><img id="vascularMap" src="./assets/'+ref.file+'" alt="'+ref.caption+' · làmina de la presentació RA2" draggable="false"><div class="pointLayer">'+targetUI()+'</div></div><div class="imageFallback" id="imageFallback" hidden>Il·lustració original pendent de publicar a GitHub.<div class="fallbackFigure">'+figure+'</div></div></div><p class="sourceNote">Font: presentació RA2.2, diapositiva '+ref.source+' · '+ref.caption+'. <b>Amplia</b> per inspeccionar i <b>arrossega el fons</b> per moure’l.</p></section><section class="card answerCard"><span class="eyebrow">Laboratori vascular</span><h2>Arrossega les etiquetes</h2><p class="sub">Selecciona el nom i toca el marcador corresponent. Pots fer servir arrossegar i deixar anar.</p><div class="bank">'+names.map((v,i)=>done[i]?'':'<button data-chip="'+i+'" draggable="true">'+v+'</button>').join('')+'</div><div class="metricRow"><div><span>Encerts</span><strong>'+Object.keys(done).length+'/'+names.length+'</strong></div><div><span>Punts</span><strong>'+s.points+'</strong></div></div><p id="feedback" aria-live="polite"></p><div class="actions"><button class="secondary" id="hint">✦ Pista (−5)</button><button id="next" '+(Object.keys(done).length===names.length?'':'disabled')+'>Continua →</button></div><p class="sub">+10 encert · −3 error · +15 cada 3 encerts seguits</p></section></div>');
 const image=document.querySelector('#vascularMap'),viewport=document.querySelector('#viewport'),transform=document.querySelector('#mapTransform');
 image.onerror=()=>{image.hidden=true;document.querySelector('#imageFallback').hidden=false};
-function apply(){transform.style.transform='translate('+panX+'px,'+panY+'px) scale('+zoom+')'}
+function apply(){transform.style.transform='translate(-50%,-50%) translate('+panX+'px,'+panY+'px) scale('+zoom+')'}
 function changeZoom(delta){zoom=Math.max(1,Math.min(3.4,+(zoom+delta).toFixed(2)));if(zoom===1){panX=0;panY=0}apply()}
 document.querySelector('#plus').onclick=()=>changeZoom(.35);
 document.querySelector('#minus').onclick=()=>changeZoom(-.35);
