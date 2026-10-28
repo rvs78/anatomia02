@@ -1,6 +1,7 @@
 import { ATLAS } from './atlas-data.js';
 import { LEVELS, QUIZ, SYNONYMS } from './data.js';
 import { normalize, matchName, shuffle, applyScore, stars, formatTime } from './logic.js';
+import * as fx from './fx.js';
 
 const KEY = 'ap-ra2-vascular-v5';
 const PASSWORD = 'alumnesap';
@@ -14,6 +15,8 @@ const app = document.querySelector('#app');
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ic = (name, cls = 'icon') => `<svg class="${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+const starRow = (n, cls = 'stars') => `<div class="${cls}" role="img" aria-label="${n} de 3 estrelles">${[0, 1, 2].map(i => `<svg viewBox="0 0 24 24" class="${i < n ? '' : 'no'}"><use href="#i-star"/></svg>`).join('')}</div>`;
 
 /* ---------- Estat ---------- */
 const fresh = email => ({
@@ -29,9 +32,11 @@ const fresh = email => ({
     i: 0, tries: 0, hinted: false, results: {},
   },
   review: { atlas: {}, quiz: [], map: [] },
+  seen: {},
 });
 let s = null;
 try { s = JSON.parse(localStorage.getItem(KEY)); if (!s || s.v !== 5) s = null; } catch { s = null; }
+if (s) s.seen ||= {};
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* mode privat */ } };
 let cleanup = () => {};
 
@@ -46,13 +51,17 @@ const levelTargets = lvl => {
 function header() {
   $('#steps').innerHTML = s ? PHASES.map((p, i) => {
     const n = i + 1, cur = n === s.phase;
-    return `<li ${cur ? 'aria-current="step"' : ''} class="${n < s.phase ? 'done' : ''}">${n < s.phase ? '✓ ' : ''}${p}</li>`;
+    return `<li ${cur ? 'aria-current="step"' : ''} class="${n < s.phase ? 'done' : ''}">${n < s.phase ? ic('check') : ''}<span>${p}</span></li>`;
   }).join('') : '';
+  const on = fx.sound.enabled();
   $('#score').innerHTML = s ? `
     <span class="who">${esc(s.email)}</span>
-    <span>Punts <b>${s.points}</b></span>
-    <span class="streak" title="Encerts seguits. Cada 3, +15 punts">Ratxa <b>${s.streak}</b></span>
-    <button class="linkish no-print" id="logout">Surt</button>` : '';
+    <span class="pts">Punts <b id="pts">${s.points}</b></span>
+    <span class="streak" title="Encerts seguits. Cada 3, +15 punts">Ratxa <b id="streak">${s.streak}</b></span>
+    <button class="iconbtn no-print" id="sound" aria-pressed="${on}" aria-label="${on ? 'Silencia els sons' : 'Activa els sons'}" title="So">${ic(on ? 'sound' : 'mute')}</button>
+    <button class="iconbtn no-print" id="logout" aria-label="Surt i esborra el progrés" title="Surt">${ic('exit')}</button>` : `
+    <button class="iconbtn no-print" id="sound" aria-pressed="${on}" aria-label="${on ? 'Silencia els sons' : 'Activa els sons'}" title="So">${ic(on ? 'sound' : 'mute')}</button>`;
+  $('#sound').onclick = () => { fx.sound.toggle(); header(); };
   const out = $('#logout');
   if (out) out.onclick = () => {
     if (!confirm('Vols sortir? Es perdrà el progrés desat en aquest navegador.')) return;
@@ -61,8 +70,11 @@ function header() {
 }
 
 function score(kind, phase) {
+  const before = s.points;
   const r = applyScore(s, kind, phase);
   save(); header();
+  if (s.points !== before) { const p = $('#pts'); p?.classList.add('bump'); }
+  if (r.bonus) { fx.banner('Ratxa de 3! +15'); fx.sound.play('bonus'); }
   return r;
 }
 
@@ -71,10 +83,87 @@ function render() {
   document.body.dataset.system = '';
   if (!s) return login();
   header();
-  if (s.phase === 1) return atlasPhase();
-  if (s.phase === 2) return quizPhase();
-  if (s.phase === 3) return mapPhase();
-  return report();
+  if (s.phase === 1) atlasPhase();
+  else if (s.phase === 2) quizPhase();
+  else if (s.phase === 3) mapPhase();
+  else return report();
+  // les fases poden reentrar a render() en canviar de fase: només un sobre alhora
+  if (!s.seen[s.phase] && !$('#intro')) intro(s.phase);
+}
+
+/* ---------- Sobre d'instruccions ---------- */
+const INTROS = {
+  1: {
+    title: 'Fase 1 <span>Atles</span>',
+    lead: 'Cada nivell és una pàgina de l\'àlbum. Omple els forats amb els cromos de cada vas.',
+    video: true,
+    cards: [
+      ['art', 'drag', 'Arrossega', 'Porta cada cromo fins al seu forat o fins al punt negre del vas.'],
+      ['ven', 'target', 'O toca i col·loca', 'Toca un cromo i després el forat. Amb teclat: Tab i Enter.'],
+      ['foil', 'zoom', 'Amplia la làmina', 'Roda del ratolí o botons + i −. Arrossega el fons per moure-la.'],
+    ],
+  },
+  2: {
+    title: 'Fase 2 <span>Test</span>',
+    lead: 'Vint preguntes de circulació triades a l\'atzar. Cada resposta porta la seva explicació.',
+    cards: [
+      ['art', 'keys', 'Respon ràpid', 'Clica una opció o prem les tecles 1, 2, 3 o 4.'],
+      ['ven', 'bulb', 'Aprèn de l\'error', 'Després de respondre veuràs la correcta i per què.'],
+      ['foil', 'star', 'Ratxa', 'Tres encerts seguits sumen 15 punts extra.'],
+    ],
+  },
+  3: {
+    title: 'Fase 3 <span>Mapa mut</span>',
+    lead: 'La làmina assenyala un vas. Escriu-ne el nom: és com a l\'examen.',
+    cards: [
+      ['art', 'pen', 'Escriu el nom', 'Sense «artèria» ni «vena». Accents opcionals; s\'accepten noms en castellà habituals.'],
+      ['ven', 'target', 'Dos intents', 'Si falles dues vegades, veuràs la resposta i passarà a la llista de repàs.'],
+      ['foil', 'bulb', 'Inicials', 'La pista mostra el començament de cada paraula (−5).'],
+    ],
+  },
+};
+function intro(phase) {
+  const I = INTROS[phase]; if (!I) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'intro'; wrap.id = 'intro';
+  wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true'); wrap.setAttribute('aria-labelledby', 'intro-title');
+  wrap.innerHTML = `
+    <div class="envelope">
+      <div class="flap"></div>
+      <div class="inside">
+        <h2 id="intro-title">${I.title}</h2>
+        <p>${I.lead}</p>
+        ${I.video ? `<video src="./assets/tutorial.mp4" poster="./assets/tutorial.jpg" autoplay muted loop playsinline aria-label="Vídeo: com s'enganxa un cromo al seu forat"></video>` : ''}
+        <div class="cards">${I.cards.map(([c, i, h, p]) => `<div class="howto ${c}">${ic(i, '')}<h3>${h}</h3><p>${p}</p></div>`).join('')}</div>
+        <div class="row">
+          <p class="muted" style="color:var(--cover-muted)">Encert +10 · Error −3 · Pista −5</p>
+          <button class="btn" id="intro-go">${ic('play')} Comença</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.append(wrap);
+  const vid = $('video', wrap); if (vid) vid.onerror = () => vid.remove();
+  const prev = document.activeElement;
+  const close = () => {
+    s.seen[phase] = true; save();
+    document.removeEventListener('keydown', onKey);
+    const done = () => { wrap.remove(); (prev && prev.isConnected ? prev : $('.chip:not(.gone), #term, .choice'))?.focus?.({ preventScroll: true }); };
+    if (fx.reduced()) return done();
+    wrap.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180 }).finished.then(done, done);
+  };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  $('#intro-go', wrap).onclick = close;
+  $('#intro-go', wrap).focus();
+  fx.sound.play('open');
+  if (fx.reduced()) return;
+  const env = $('.envelope', wrap), ease = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  wrap.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+  env.animate([{ transform: 'translateY(40px) scale(.9) rotate(-2deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 480, easing: ease });
+  $('.flap', wrap).animate([{ transform: 'scaleY(5)', filter: 'brightness(1.2)' }, { transform: 'scaleY(1)' }], { duration: 520, delay: 220, easing: ease, fill: 'backwards' });
+  $$('.howto', wrap).forEach((c, i) => c.animate(
+    [{ transform: `translateY(60px) rotate(${(i - 1) * 9}deg) scale(.85)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+    { duration: 520, delay: 380 + i * 110, easing: ease, fill: 'backwards' }));
 }
 
 /* ---------- Entrada ---------- */
@@ -93,21 +182,21 @@ function login() {
   header();
   app.innerHTML = `
   <section class="welcome">
-    <div class="intro">
-      <h1>Vascular Quest</h1>
-      <p>Identifica les artèries i les venes principals sobre l'atles del RA2, tal com a la làmina de classe.</p>
+    <div class="intro-col">
+      <h1>Vascular <span>Quest</span></h1>
+      <p>Omple l'àlbum de les artèries i les venes del RA2, sobre la mateixa làmina de classe.</p>
       <ol>
-        <li><b>Atles</b>: col·loca cada nom a la seva casella. Nou nivells.</li>
-        <li><b>Test</b>: vint preguntes de circulació, amb explicació.</li>
-        <li><b>Mapa mut</b>: escriu el nom del vas assenyalat.</li>
+        <li><span><b>Atles.</b> Enganxa cada cromo al seu forat, en nou pàgines.</span></li>
+        <li><span><b>Test.</b> Vint preguntes de circulació, amb explicació.</span></li>
+        <li><span><b>Mapa mut.</b> Escriu el nom del vas assenyalat.</span></li>
       </ol>
       <form id="login" novalidate>
         <label class="field">Correu de l'institut<input name="email" type="email" autocomplete="email" placeholder="nom@isvh.cat" required></label>
         <label class="field">Contrasenya de l'aula<input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="btn">Comença</button>
+        <button class="btn">${ic('play')} Obre l'àlbum</button>
         <p class="feedback err" id="fb" role="alert"></p>
       </form>
-      <p class="muted">El progrés es desa en aquest navegador. Si canvies d'ordinador o fas servir una finestra privada, començaràs de nou.</p>
+      <p class="note">El progrés es desa en aquest navegador. Si canvies d'ordinador o fas servir una finestra privada, començaràs de nou.</p>
     </div>
     <div class="art" aria-hidden="true">${previewPlate()}</div>
   </section>`;
@@ -115,30 +204,32 @@ function login() {
     e.preventDefault();
     const f = new FormData(e.target);
     const email = String(f.get('email')).trim().toLowerCase();
-    if (!/^[^@\s]+@isvh\.cat$/.test(email)) return void ($('#fb').textContent = 'Escriu el teu correu acabat en @isvh.cat.');
-    if (f.get('password') !== PASSWORD) return void ($('#fb').textContent = 'La contrasenya no és correcta. Demana-la al professorat.');
+    const fail = m => { $('#fb').innerHTML = ic('x') + `<span>${m}</span>`; fx.shake($('#login')); fx.sound.play('miss'); };
+    if (!/^[^@\s]+@isvh\.cat$/.test(email)) return fail('Escriu el teu correu acabat en @isvh.cat.');
+    if (f.get('password') !== PASSWORD) return fail('La contrasenya no és correcta. Demana-la al professorat.');
     s = fresh(email); save(); render();
   };
 }
 
 /* ---------- Làmina reutilitzable (zoom i desplaçament) ---------- */
-function mountPlate(stage, system, inner) {
+function mountPlate(stage, system, inner, pageLabel) {
   const A = ATLAS[system];
   stage.innerHTML = `
+    ${pageLabel ? `<div class="pageno">${pageLabel}</div>` : ''}
     <div class="plate" id="plate" style="aspect-ratio:${A.w}/${A.h}">
       <img src="${A.src}" alt="Làmina del sistema ${system === 'art' ? 'arterial' : 'venós'} amb els vasos assenyalats per punts i línies guia" width="${A.w}" height="${A.h}">
       <svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
       ${inner}
     </div>
     <div class="zoomer no-print">
-      <button type="button" data-z="in" aria-label="Amplia la làmina">+</button>
-      <button type="button" data-z="out" aria-label="Redueix la làmina">−</button>
-      <button type="button" data-z="fit" aria-label="Ajusta la làmina a la pantalla">⤢</button>
+      <button type="button" data-z="in" aria-label="Amplia la làmina">${ic('plus')}</button>
+      <button type="button" data-z="out" aria-label="Redueix la làmina">${ic('minus')}</button>
+      <button type="button" data-z="fit" aria-label="Ajusta la làmina a la pantalla">${ic('fit')}</button>
     </div>`;
   const plate = $('#plate', stage);
-  const view = { z: 1, x: 0, y: 0, base: 1, w: 0, h: 0 };
+  const view = { z: 1, x: 0, y: 0, w: 0, h: 0 };
   function fit() {
-    const r = stage.getBoundingClientRect(), pad = 16;
+    const r = stage.getBoundingClientRect(), pad = 30;
     const h = Math.min(r.height - pad * 2, (r.width - pad * 2) * A.h / A.w);
     view.w = h * A.w / A.h; view.h = h;
     plate.style.width = view.w + 'px'; plate.style.height = view.h + 'px';
@@ -157,7 +248,6 @@ function mountPlate(stage, system, inner) {
   function zoomTo(z, cx, cy) {
     const r = stage.getBoundingClientRect();
     const nz = Math.min(3, Math.max(1, +z.toFixed(2)));
-    // conserva el punt sota el cursor
     const px = (cx ?? r.left + r.width / 2) - (r.left + r.width / 2), py = (cy ?? r.top + r.height / 2) - (r.top + r.height / 2);
     view.x = px - (px - view.x) * nz / view.z; view.y = py - (py - view.y) * nz / view.z;
     view.z = nz; if (nz === 1) { view.x = 0; view.y = 0; }
@@ -180,7 +270,7 @@ function mountPlate(stage, system, inner) {
   fit();
   return {
     plate, svg: $('svg', plate), dispose: () => ro.disconnect(),
-    focusOn(t) { // si la làmina està ampliada, centra el vas indicat
+    focusOn(t) {
       if (view.z === 1) return;
       view.x = -(t.x / 100 - .5) * view.w * view.z; view.y = -(t.y / 100 - .5) * view.h * view.z; apply();
     },
@@ -188,18 +278,34 @@ function mountPlate(stage, system, inner) {
 }
 
 function leader(svg, t, cls) {
-  const sx = t.slotX;
   const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  el.setAttribute('x1', sx); el.setAttribute('y1', t.slotY); el.setAttribute('x2', t.x); el.setAttribute('y2', t.y);
+  el.setAttribute('x1', t.slotX); el.setAttribute('y1', t.slotY); el.setAttribute('x2', t.x); el.setAttribute('y2', t.y);
   el.setAttribute('class', cls); el.dataset.for = t.id;
   svg.append(el);
   return el;
 }
 
+/** Si el punter és sobre un punt de vas, tria el punt actiu més proper (els punts propers se solapen). */
+function nearestTarget(el, x, y) {
+  const hit = el?.closest('[data-target]');
+  if (!hit || !hit.classList.contains('dot')) return hit;
+  let best = hit, bd = Infinity;
+  $$('.dot[data-target]:not(.off)').forEach(d => {
+    const r = d.getBoundingClientRect(), dd = Math.hypot(r.left + r.width / 2 - x, r.top + r.height / 2 - y);
+    if (dd < bd) { bd = dd; best = d; }
+  });
+  return best;
+}
+
+function sayIn(fb) {
+  const icons = { ok: 'check', err: 'x', info: 'bulb' };
+  return (msg, kind) => { fb.innerHTML = `${ic(icons[kind] || 'bulb')}<span>${esc(msg)}</span>`; fb.className = 'feedback ' + kind; };
+}
+
 /* ---------- Fase 1 · Atles ---------- */
 function atlasPhase() {
   const lvl = s.p1.level;
-  if (lvl >= LEVELS.length) { s.phase = 2; s.p2.start = Date.now(); save(); return render(); }
+  if (lvl >= LEVELS.length) { s.phase = 2; save(); return render(); }
   const L = LEVELS[lvl], A = ATLAS[L.system], active = levelTargets(lvl);
   const activeIds = new Set(active.map(t => t.id));
   const placed = s.p1.placed[lvl] ||= {};
@@ -211,7 +317,7 @@ function atlasPhase() {
   const slots = A.targets.map(t => {
     const on = activeIds.has(t.id), done = placed[t.id];
     return `<button type="button" class="slot ${t.side} ${on ? '' : 'off'} ${done ? 'done' : ''}" style="--sx:${t.slotX}%;top:${t.slotY}%"
-      data-target="${t.id}" ${on ? '' : 'tabindex="-1" aria-hidden="true"'} aria-label="${done ? esc(t.name) : 'Casella buida'}">${done ? esc(t.name) : ''}</button>
+      data-target="${t.id}" ${on ? '' : 'tabindex="-1" aria-hidden="true"'} aria-label="${done ? esc(t.name) : 'Forat buit'}">${done ? esc(t.name) : ''}</button>
       <button type="button" class="dot ${on ? '' : 'off'} ${done ? 'done' : ''}" style="left:${t.x}%;top:${t.y}%" data-target="${t.id}" tabindex="-1" aria-hidden="true"></button>`;
   }).join('');
 
@@ -220,38 +326,40 @@ function atlasPhase() {
     <div class="stage" id="stage"></div>
     <aside class="panel">
       <header>
-        <span class="kicker">${sysName} · nivell ${lvl + 1} de ${LEVELS.length}</span>
         <h1>${esc(L.title)}</h1>
-        <p class="muted">${L.boss ? 'Totes les caselles de la làmina. Sense ajudes de regió.' : 'Les caselles grises són d\'altres nivells.'}</p>
+        <div class="meta"><span class="sysbadge">${sysName}</span><span>${L.boss ? 'Pàgina completa, sense ajudes de regió' : 'Els forats grisos són d\'altres pàgines'}</span></div>
       </header>
-      <div><div class="row" style="justify-content:space-between"><span class="muted" id="count"></span><span class="muted" id="clock"></span></div><div class="bar"><span id="bar"></span></div></div>
+      <div class="progress">
+        <div class="row"><span><b id="count"></b> enganxats</span><span id="clock"></span></div>
+        <div class="bar"><span id="bar"></span></div>
+      </div>
       <div id="work">
-        <p class="muted" style="margin-bottom:10px">Arrossega cada nom fins a la seva casella o el seu punt. També pots tocar un nom i després la casella.</p>
-        <div class="bank" id="bank" role="list"></div>
+        <p class="muted" style="margin-bottom:12px">Arrossega cada cromo fins al seu forat, o toca'l i després toca el forat.</p>
+        <div class="pile" id="bank" role="list" aria-label="Cromos per enganxar"></div>
       </div>
       <p class="feedback" id="fb" aria-live="polite"></p>
-      <div class="row" id="tools">
-        <button type="button" class="btn ghost" id="hint">Pista (−5)</button>
+      <div class="row tools" id="tools">
+        <button type="button" class="btn ghost small" id="hint">${ic('bulb')} Pista −5</button>
       </div>
     </aside>
   </section>`;
 
   const stage = $('#stage');
-  const P = mountPlate(stage, L.system, slots);
+  const P = mountPlate(stage, L.system, slots, `Pàgina <span>${lvl + 1}</span> / ${LEVELS.length}`);
+  let timer = 0;
   cleanup = () => { P.dispose(); clearInterval(timer); };
   active.filter(t => placed[t.id]).forEach(t => leader(P.svg, t, ''));
 
   const bank = $('#bank');
   bank.innerHTML = s.p1.bank[lvl].map(n => `<button type="button" class="chip ${active.some(t => t.name === n && placed[t.id]) ? 'gone' : ''}" role="listitem" aria-pressed="false" data-name="${esc(n)}">${esc(n)}</button>`).join('');
-  const fb = $('#fb');
-  const say = (msg, kind) => { fb.textContent = msg; fb.className = 'feedback ' + kind; };
-  let selected = null;
+  const say = sayIn($('#fb'));
+  let selected = null, busy = false;
   const elapsed = () => stat.ms + (Date.now() - s.p1.levelStart);
-  const timer = setInterval(() => { $('#clock').textContent = formatTime(elapsed()); }, 1000);
+  timer = setInterval(() => { $('#clock').textContent = formatTime(elapsed()); }, 1000);
 
   function progress() {
     const n = active.filter(t => placed[t.id]).length;
-    $('#count').textContent = `${n} de ${active.length} vasos`;
+    $('#count').textContent = `${n} de ${active.length}`;
     $('#bar').style.width = (100 * n / active.length) + '%';
     $('#clock').textContent = formatTime(elapsed());
     if (n === active.length) finishLevel();
@@ -261,39 +369,50 @@ function atlasPhase() {
     selected = chip && chip.getAttribute('aria-pressed') === 'true' ? chip.dataset.name : null;
     $$('.dot.ping, .slot.ask').forEach(e => e.classList.remove('ping', 'ask'));
   }
-  function attempt(name, id) {
-    if (!name || !activeIds.has(id) || placed[id]) return;
-    const t = targetById(id);
+  async function attempt(name, id, from) {
+    if (busy || !name || !activeIds.has(id) || placed[id]) return;
+    const t = targetById(id), slot = $(`.slot[data-target="${id}"]`), chip = $(`.chip[data-name="${CSS.escape(name)}"]`, bank);
     $$('line.hint', P.svg).forEach(l => l.remove());
     $$('.ping, .ask').forEach(e => e.classList.remove('ping', 'ask'));
+    busy = true;
     if (t.name === name) {
       placed[id] = true;
       const r = score('hit', 1);
-      $$(`[data-target="${id}"]`).forEach(e => { e.classList.add('done'); });
-      const slot = $(`.slot[data-target="${id}"]`); slot.textContent = name; slot.setAttribute('aria-label', name);
-      leader(P.svg, t, 'draw');
-      $(`.chip[data-name="${CSS.escape(name)}"]`, bank)?.classList.add('gone');
+      save();
       selected = null;
-      say(r.bonus ? `Correcte: ${name}. Tres seguits, +${r.gained} punts.` : `Correcte: ${name}. +10 punts.`, 'ok');
-      save(); progress();
+      chip?.classList.add('lifting');
+      await fx.fly(from || chip, slot, name, L.system);
+      chip?.classList.add('gone'); chip?.classList.remove('lifting');
+      $$(`[data-target="${id}"]`).forEach(e => e.classList.add('done'));
+      slot.textContent = name; slot.setAttribute('aria-label', name);
+      leader(P.svg, t, 'draw');
+      fx.stick(slot);
+      fx.burst(slot, '+' + r.gained);
+      if (!r.bonus) fx.sound.play('hit');
+      say(r.bonus ? `${name}! Tres seguits: +${r.gained} punts.` : `${name}, enganxat. +10 punts.`, 'ok');
+      busy = false;
+      progress();
       $('.chip:not(.gone)', bank)?.focus({ preventScroll: true });
     } else {
       stat.errors++;
       score('miss', 1);
       (s.review.atlas[name] ||= 0); s.review.atlas[name]++;
       save();
-      $$(`[data-target="${id}"]`).forEach(e => {
-        e.classList.remove('wrong'); void e.offsetWidth; e.classList.add('wrong');
-        e.addEventListener('animationend', () => e.classList.remove('wrong'), { once: true });
-      });
-      say(`${name} no va en aquesta casella. −3 punts.`, 'err');
+      $$(`[data-target="${id}"]`).forEach(fx.shake);
+      fx.sound.play('miss');
+      fx.burst(slot, '−3', 'loss');
+      say(`${name} no va en aquest forat. −3 punts.`, 'err');
+      chip?.classList.add('lifting');
+      await fx.bounceBack(from || slot, chip || bank, name, L.system);
+      chip?.classList.remove('lifting');
+      busy = false;
     }
   }
 
   // Arrossegar amb punter (ratolí, trackpad i pantalla tàctil)
   let drag = null;
   bank.addEventListener('pointerdown', e => {
-    const chip = e.target.closest('.chip'); if (!chip || e.button > 0) return;
+    const chip = e.target.closest('.chip'); if (!chip || e.button > 0 || busy) return;
     drag = { chip, x: e.clientX, y: e.clientY, moving: false, ghost: null, over: null };
     chip.setPointerCapture(e.pointerId);
   });
@@ -303,10 +422,11 @@ function atlasPhase() {
       drag.moving = true;
       drag.ghost = Object.assign(document.createElement('div'), { className: 'ghost-chip', textContent: drag.chip.dataset.name });
       document.body.append(drag.ghost);
+      drag.chip.classList.add('lifting');
     }
     if (!drag.moving) return;
     drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
-    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-target]');
+    const over = nearestTarget(document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY);
     if (drag.over && drag.over !== over) $$(`[data-target="${drag.over.dataset.target}"]`).forEach(x => x.classList.remove('drop'));
     if (over && activeIds.has(over.dataset.target)) $$(`[data-target="${over.dataset.target}"]`).forEach(x => x.classList.add('drop'));
     drag.over = over;
@@ -315,46 +435,53 @@ function atlasPhase() {
     if (!drag) return;
     const d = drag; drag = null;
     d.ghost?.remove();
+    d.chip.classList.remove('lifting');
     $$('.drop').forEach(x => x.classList.remove('drop'));
     if (!d.moving) return select(d.chip);
-    const over = e.type === 'pointerup' ? document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-target]') : null;
-    if (over) attempt(d.chip.dataset.name, over.dataset.target);
+    const over = e.type === 'pointerup' ? nearestTarget(document.elementFromPoint(e.clientX, e.clientY), e.clientX, e.clientY) : null;
+    if (over) attempt(d.chip.dataset.name, over.dataset.target, { x: e.clientX, y: e.clientY });
   };
   bank.addEventListener('pointerup', endDrag);
   bank.addEventListener('pointercancel', endDrag);
   bank.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(e.target.closest('.chip')); } });
   stage.addEventListener('click', e => {
-    const t = e.target.closest('[data-target]'); if (!t) return;
-    if (!selected) return say('Primer tria un nom de la llista.', 'info');
+    const t = nearestTarget(e.target, e.clientX, e.clientY); if (!t) return;
+    if (!selected) { fx.sound.play('hint'); return say('Primer tria un cromo del munt.', 'info'); }
     attempt(selected, t.dataset.target);
   });
 
   $('#hint').onclick = () => {
-    if (!selected) return say('Tria primer un nom i la pista et mostrarà on va.', 'info');
+    if (!selected) return say('Tria primer un cromo i la pista et mostrarà on va.', 'info');
     const t = active.find(x => x.name === selected);
     stat.hints++; score('hint', 1); save();
+    fx.sound.play('hint');
     $$(`[data-target="${t.id}"]`).forEach(e => e.classList.add(e.classList.contains('dot') ? 'ping' : 'ask'));
     leader(P.svg, t, 'hint');
     P.focusOn(t);
-    say(`Pista: ${selected} és la casella assenyalada en ocre. −5 punts.`, 'info');
+    say(`Pista: el forat de ${selected} brilla en daurat. −5 punts.`, 'info');
   };
 
   function finishLevel() {
-    if (!stat.done) { stat.ms = elapsed(); stat.stars = stars(stat.errors, stat.hints); stat.done = true; save(); }
+    const first = !stat.done;
+    if (first) { stat.ms = elapsed(); stat.stars = stars(stat.errors, stat.hints); stat.done = true; save(); }
     clearInterval(timer);
     const st = stat.stars;
     $('#work').innerHTML = `
       <div class="done-card">
-        <h2>Nivell completat</h2>
-        <div class="stars" aria-label="${st} de 3 estrelles">${'★'.repeat(st)}<span class="no">${'★'.repeat(3 - st)}</span></div>
+        <h2>Pàgina completa</h2>
+        ${starRow(st)}
         <div class="stats">
           <div><span>Temps</span><b>${formatTime(stat.ms).replace(' min ', ':').replace(' s', '')}</b></div>
           <div><span>Errors</span><b>${stat.errors}</b></div>
           <div><span>Pistes</span><b>${stat.hints}</b></div>
         </div>
-        <button class="btn sys" id="next">${lvl + 1 < LEVELS.length ? 'Següent nivell' : 'Comença el test'}</button>
+        <button class="btn sys" id="next">${lvl + 1 < LEVELS.length ? 'Passa la pàgina' : 'Comença el test'}</button>
       </div>`;
     $('#tools').hidden = true;
+    if (first) {
+      fx.sound.play('level');
+      $$('.done-card .stars svg').forEach((el, i) => fx.stamp(el, 250 + i * 260));
+    }
     $('#next').onclick = () => { s.p1.level++; s.p1.levelStart = Date.now(); save(); render(); };
     $('#next').focus();
   }
@@ -369,18 +496,18 @@ function quizPhase() {
   const perm = p.perm[qi] ||= shuffle([0, 1, 2, 3]);
   const answered = p.answers[qi];
   app.innerHTML = `
-  <section class="quiz">
-    <div>
-      <div class="row" style="justify-content:space-between"><span class="kicker">Pregunta ${p.i + 1} de ${p.order.length}</span><span class="muted">Tecles 1–4 per respondre</span></div>
-      <div class="bar" style="margin-top:6px"><span style="width:${100 * p.i / p.order.length}%"></span></div>
+  <div class="quizwrap"><section class="quiz">
+    <div class="qcard">
+      <div class="qhead"><span class="num">${p.i + 1} <span>/ ${p.order.length}</span></span><span class="muted">Tecles 1–4 per respondre</span></div>
+      <div class="bar"><span style="width:${100 * p.i / p.order.length}%"></span></div>
+      <h2>${esc(q)}</h2>
+      <div class="choices" role="group" aria-label="Opcions">
+        ${perm.map((o, k) => `<button type="button" class="choice" data-o="${o}"><kbd>${k + 1}</kbd><span>${esc(opts[o])}</span>${ic(o === right ? 'check' : 'x')}</button>`).join('')}
+      </div>
+      <div id="after"></div>
     </div>
-    <h2>${esc(q)}</h2>
-    <div class="choices" role="group" aria-label="Opcions">
-      ${perm.map((o, k) => `<button type="button" class="choice" data-o="${o}"><kbd>${k + 1}</kbd><span>${esc(opts[o])}</span></button>`).join('')}
-    </div>
-    <div id="after"></div>
-  </section>`;
-  const show = picked => {
+  </section></div>`;
+  const show = (picked, animate) => {
     $$('.choice').forEach(b => {
       b.disabled = true;
       const o = +b.dataset.o;
@@ -389,22 +516,25 @@ function quizPhase() {
     });
     const ok = picked === right;
     $('#after').innerHTML = `
-      <div class="explain"><b>${ok ? 'Correcte.' : 'Incorrecte. La resposta bona és la marcada en verd.'}</b> ${esc(why)}</div>
+      <div class="explain"><b>${ok ? 'Correcte!' : 'No és aquesta.'}</b><span>${ok ? '' : 'La bona és la marcada en verd. '}${esc(why)}</span></div>
       <div class="row" style="margin-top:14px"><button class="btn" id="next">${p.i + 1 < p.order.length ? 'Següent pregunta' : 'Comença el mapa mut'}</button></div>`;
     $('#next').onclick = () => { p.i++; save(); render(); };
     $('#next').focus();
+    if (animate && !fx.reduced()) $('.explain').animate([{ transform: 'translateY(10px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
   };
-  if (answered != null) show(answered);
+  if (answered != null) show(answered, false);
   const choose = o => {
     if (p.answers[qi] != null) return;
     p.answers[qi] = o;
-    const ok = o === right;
-    score(ok ? 'hit' : 'miss', 2);
+    const ok = o === right, btn = $(`.choice[data-o="${o}"]`);
+    const r = score(ok ? 'hit' : 'miss', 2);
     if (!ok) s.review.quiz.push(qi);
-    save(); show(o);
+    save(); show(o, true);
+    if (ok) { fx.stick(btn); fx.burst(btn, '+' + r.gained); if (!r.bonus) fx.sound.play('hit'); }
+    else { fx.shake(btn); fx.burst(btn, '−3', 'loss'); fx.sound.play('miss'); }
   };
   $('.choices').onclick = e => { const b = e.target.closest('.choice'); if (b) choose(+b.dataset.o); };
-  const onKey = e => { const n = +e.key; if (n >= 1 && n <= 4 && !e.target.closest('input')) choose(perm[n - 1]); };
+  const onKey = e => { const n = +e.key; if (n >= 1 && n <= 4 && !e.target.closest('input') && !$('#intro')) choose(perm[n - 1]); };
   document.addEventListener('keydown', onKey);
   cleanup = () => document.removeEventListener('keydown', onKey);
 }
@@ -422,51 +552,54 @@ function mapPhase() {
     <div class="stage" id="stage"></div>
     <aside class="panel">
       <header>
-        <span class="kicker">${sys === 'art' ? 'Artèria' : 'Vena'} · ${p.i + 1} de ${p.order.length}</span>
         <h1>Quin vas és?</h1>
-        <p class="muted">Escriu el nom del vas assenyalat. S'accepten accents o no, i noms en castellà habituals.</p>
+        <div class="meta"><span class="sysbadge">${sys === 'art' ? 'Artèria' : 'Vena'}</span><span>${p.i + 1} de ${p.order.length}</span></div>
       </header>
       <div class="bar"><span style="width:${100 * p.i / p.order.length}%"></span></div>
       <form class="answer" id="ans" autocomplete="off">
-        <label class="field" for="term">Nom del vas</label>
+        <label class="field" for="term">Nom del vas assenyalat</label>
         <input id="term" name="term" spellcheck="false" autocapitalize="off" placeholder="Per exemple: femoral">
-        <div class="row"><button class="btn sys">Comprova</button><button type="button" class="btn ghost" id="hint">Inicials (−5)</button></div>
+        <div class="row"><button class="btn sys">${ic('check')} Comprova</button><button type="button" class="btn ghost small" id="hint">${ic('bulb')} Inicials −5</button></div>
       </form>
       <p class="feedback" id="fb" aria-live="polite"></p>
-      <p class="muted">Intents per vas: ${MAP_TRIES}. Després es mostra la resposta i continues.</p>
+      <p class="muted tools">Tens ${MAP_TRIES} intents per vas. Després veuràs la resposta i continuaràs.</p>
     </aside>
   </section>`;
-  const P = mountPlate($('#stage'), sys, dots + slot);
+  const P = mountPlate($('#stage'), sys, dots + slot, `Mapa mut <span>${p.i + 1}</span> / ${p.order.length}`);
   leader(P.svg, t, 'hint');
-  cleanup = () => P.dispose();
-  const fb = $('#fb'), input = $('#term');
-  input.focus();
-  const say = (m, k) => { fb.textContent = m; fb.className = 'feedback ' + k; };
-  const next = (ms = 1400) => setTimeout(() => { p.i++; p.tries = 0; p.hinted = false; save(); render(); }, ms);
+  let timer = 0;
+  cleanup = () => { P.dispose(); clearTimeout(timer); };
+  const input = $('#term');
+  if (s.seen[3]) input.focus();
+  const say = sayIn($('#fb'));
+  const next = ms => { timer = setTimeout(() => { p.i++; p.tries = 0; p.hinted = false; save(); render(); }, ms); };
   let locked = false;
   $('#ans').onsubmit = e => {
     e.preventDefault(); if (locked) return;
     const val = input.value; if (!normalize(val)) return say('Escriu un nom abans de comprovar.', 'info');
-    const m = matchName(val, t.name, SYNONYMS);
+    const m = matchName(val, t.name, SYNONYMS), box = $('.slot.ask');
     if (m) {
       locked = true; p.results[id] = p.tries ? 'retry' : 'ok';
       const r = score('hit', 3);
-      $('.slot.ask').textContent = t.name; $('.slot.ask').className = `slot ${t.side} done`;
-      say(m === 'typo' ? `Correcte: ${t.name}. Revisa l'ortografia.` : `Correcte: ${t.name}.${r.bonus ? ' Tres seguits, +15.' : ''}`, 'ok');
-      save(); return next(900);
+      box.textContent = t.name; box.className = `slot ${t.side} done`;
+      fx.stick(box); fx.burst(box, '+' + r.gained);
+      if (!r.bonus) fx.sound.play('hit');
+      say(m === 'typo' ? `${t.name}! Revisa l'ortografia.` : `${t.name}!${r.bonus ? ' Tres seguits, +15.' : ''}`, 'ok');
+      save(); return next(1000);
     }
     p.tries++; score('miss', 3);
+    fx.shake(input); fx.shake(box); fx.sound.play('miss'); fx.burst(box, '−3', 'loss');
     if (p.tries >= MAP_TRIES) {
       locked = true; p.results[id] = 'miss'; s.review.map.push(id); save();
-      $('.slot.ask').textContent = t.name;
+      box.textContent = t.name;
       say(`Era ${t.name}. L'afegim a la llista de repàs.`, 'err');
       return next(2200);
     }
-    save(); say('No és correcte. Torna-ho a provar.', 'err'); input.select();
+    save(); say('No és aquest. Torna-ho a provar.', 'err'); input.select();
   };
   $('#hint').onclick = () => {
     if (p.hinted || locked) return;
-    p.hinted = true; score('hint', 3); save();
+    p.hinted = true; score('hint', 3); save(); fx.sound.play('hint');
     const shown = t.name.split(' ').map(w => w.slice(0, Math.max(2, Math.ceil(w.length / 3))) + '…').join(' ');
     say(`Comença per: ${shown}`, 'info'); input.focus();
   };
@@ -481,41 +614,48 @@ function report() {
   const rows = LEVELS.map((L, i) => {
     const st = s.p1.stats[i] || {};
     return `<tr><td>${i + 1}. ${esc(L.title)} <span class="muted">(${L.system === 'art' ? 'artèries' : 'venes'})</span></td>
-      <td class="num">${st.stars ? '★'.repeat(st.stars) : '—'}</td><td class="num">${st.errors ?? 0}</td><td class="num">${st.hints ?? 0}</td><td class="num">${st.ms ? formatTime(st.ms) : '—'}</td></tr>`;
+      <td class="num">${st.stars ? starRow(st.stars, 'mini') : '—'}</td><td class="num">${st.errors ?? 0}</td><td class="num">${st.hints ?? 0}</td><td class="num">${st.ms ? formatTime(st.ms) : '—'}</td></tr>`;
   }).join('');
   const atlasMiss = Object.entries(s.review.atlas).sort((a, b) => b[1] - a[1]);
   const mapMiss = s.review.map.map(targetById);
   const quizMiss = s.review.quiz.map(qi => QUIZ[qi]);
   app.innerHTML = `
-  <section class="report" id="report">
-    <header style="display:grid;gap:6px">
-      <h1>Informe de Vascular Quest · RA2</h1>
-      <p><b>${esc(s.email)}</b> · ${new Date(s.end || Date.now()).toLocaleString('ca-ES')} · temps total ${formatTime(totalMs)}</p>
-    </header>
-    <div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr))">
-      <div><span>Punts</span><b>${s.points}</b></div>
-      <div><span>Atles</span><b>${s.phasePts[1]}</b></div>
-      <div><span>Test</span><b>${quizOk}/${s.p2.order.length}</b></div>
-      <div><span>Mapa mut</span><b>${mapOk}/${s.p3.order.length}</b></div>
-      <div><span>Errors</span><b>${s.errors}</b></div>
-      <div><span>Pistes</span><b>${s.hints}</b></div>
+  <div class="reportwrap"><section class="report" id="report">
+    <div class="sheet">
+      <header style="display:grid;gap:8px">
+        <h1>Àlbum completat</h1>
+        <p><b>${esc(s.email)}</b>, ${new Date(s.end || Date.now()).toLocaleString('ca-ES')}. Temps total: ${formatTime(totalMs)}.</p>
+      </header>
+      <div class="tiles">
+        <div class="tile big"><span>Punts</span><b>${s.points}</b></div>
+        <div class="tile"><span>Atles</span><b>${s.phasePts[1]}</b></div>
+        <div class="tile"><span>Test</span><b>${quizOk}/${s.p2.order.length}</b></div>
+        <div class="tile"><span>Mapa mut</span><b>${mapOk}/${s.p3.order.length}</b></div>
+        <div class="tile"><span>Errors</span><b>${s.errors}</b></div>
+        <div class="tile"><span>Pistes</span><b>${s.hints}</b></div>
+      </div>
+      <div>
+        <h2 style="margin-bottom:8px">Pàgines de l'atles</h2>
+        <table><thead><tr><th>Pàgina</th><th class="num">Estrelles</th><th class="num">Errors</th><th class="num">Pistes</th><th class="num">Temps</th></tr></thead><tbody>${rows}</tbody></table>
+      </div>
+      <div style="display:grid;gap:10px">
+        <h2>Per repassar</h2>
+        ${atlasMiss.length ? `<p class="muted">Cromos col·locats en un forat equivocat (vegades):</p><div class="tags">${atlasMiss.map(([n, c]) => `<span class="tag">${esc(n)} × ${c}</span>`).join('')}</div>` : ''}
+        ${mapMiss.length ? `<p class="muted">Vasos no reconeguts al mapa mut:</p><div class="tags">${mapMiss.map(t => `<span class="tag ${systemOf(t.id)}">${esc(t.name)}</span>`).join('')}</div>` : ''}
+        ${quizMiss.length ? `<p class="muted">Preguntes del test fallades i la seva resposta:</p><ul>${quizMiss.map(q => `<li>${esc(q[0])} <b>${esc(q[1][q[2]])}</b></li>`).join('')}</ul>` : ''}
+        ${!atlasMiss.length && !mapMiss.length && !quizMiss.length ? '<p>Cap error en tot el recorregut.</p>' : ''}
+      </div>
+      <div class="no-print" style="display:grid;gap:10px">
+        <div class="row"><button class="btn" id="pdf">${ic('pdf')} Desa l'informe en PDF</button><button class="btn ghost" id="mail" style="color:var(--ink)">${ic('mail')} Obre un correu al professor</button></div>
+        <p class="muted">Al diàleg d'impressió tria «Desa com a PDF». El correu s'obre amb el resum, però el PDF l'has d'adjuntar tu abans d'enviar-lo.</p>
+      </div>
     </div>
-    <div>
-      <h2 style="margin-bottom:8px">Atles per nivells</h2>
-      <table><thead><tr><th>Nivell</th><th class="num">Estrelles</th><th class="num">Errors</th><th class="num">Pistes</th><th class="num">Temps</th></tr></thead><tbody>${rows}</tbody></table>
-    </div>
-    <div style="display:grid;gap:10px">
-      <h2>Per repassar</h2>
-      ${atlasMiss.length ? `<p class="muted">Noms col·locats malament a l'atles (vegades):</p><div class="tags">${atlasMiss.map(([n, c]) => `<span class="tag">${esc(n)} × ${c}</span>`).join('')}</div>` : ''}
-      ${mapMiss.length ? `<p class="muted">Vasos no reconeguts al mapa mut:</p><div class="tags">${mapMiss.map(t => `<span class="tag ${systemOf(t.id)}">${esc(t.name)}</span>`).join('')}</div>` : ''}
-      ${quizMiss.length ? `<p class="muted">Preguntes del test fallades:</p><ul style="margin:0;padding-left:1.2em">${quizMiss.map(q => `<li>${esc(q[0])} <b>${esc(q[1][q[2]])}</b></li>`).join('')}</ul>` : ''}
-      ${!atlasMiss.length && !mapMiss.length && !quizMiss.length ? '<p>Cap error en tot el recorregut.</p>' : ''}
-    </div>
-    <div class="no-print" style="display:grid;gap:10px">
-      <div class="row"><button class="btn" id="pdf">Desa l'informe en PDF</button><button class="btn ghost" id="mail">Obre un correu al professor</button></div>
-      <p class="muted">Al diàleg d'impressió tria «Desa com a PDF». El correu s'obre amb el resum, però el PDF l'has d'adjuntar tu abans d'enviar-lo.</p>
-    </div>
-  </section>`;
+  </section></div>`;
+  if (!s.seen[4]) {
+    s.seen[4] = true; save();
+    fx.sound.play('level');
+    $$('.tile').forEach((el, i) => fx.stamp(el, 120 + i * 90));
+  }
   $('#pdf').onclick = () => window.print();
   $('#mail').onclick = () => {
     const body = `Informe de Vascular Quest · RA2\nAlumne: ${s.email}\nPunts: ${s.points}\nTest: ${quizOk}/${s.p2.order.length}\nMapa mut: ${mapOk}/${s.p3.order.length}\nErrors: ${s.errors} · Pistes: ${s.hints}\nTemps: ${formatTime(totalMs)}\n\nAdjunto l'informe en PDF.`;

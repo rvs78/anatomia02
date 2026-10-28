@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { ATLAS } from '../atlas-data.js';
 import { LEVELS, QUIZ, SYNONYMS } from '../data.js';
 import { normalize, matchName, shuffle, applyScore, stars } from '../logic.js';
+import * as fx from '../fx.js';
 
 let n = 0; const ok = (c, m) => { assert.ok(c, m); n++; };
 
@@ -56,4 +57,10 @@ applyScore(s, 'hint', 1); ok(s.points === 37 && s.hints === 1, 'pista −5');
 const z = { points: 2, streak: 0, correct: 0, errors: 0, hints: 0, phasePts: {} };
 applyScore(z, 'hint', 1); ok(z.points === 0 && z.phasePts[1] === -2, 'mínim 0');
 ok(stars(0, 0) === 3 && stars(1, 1) === 2 && stars(2, 1) === 1, 'estrelles');
+// Efectes: segurs sense navegador (Node no té window ni AudioContext)
+ok(typeof fx.sound.play === 'function' && typeof fx.fly === 'function', 'fx exporta sound i fly');
+fx.sound.play('hit'); fx.sound.play('miss');
+ok(fx.reduced() === true, 'sense window es considera moviment reduït');
+ok(typeof fx.sound.enabled() === 'boolean', 'sound.enabled');
+await fx.fly(null, null, 'x', 'art'); n++;
 console.log(`✓ ${n} comprovacions superades`);
