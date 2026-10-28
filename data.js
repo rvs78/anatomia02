@@ -1,13 +1,13 @@
 export const regions=[
-['Grans artèries del tòrax',['Artèria caròtida comuna','Arc aòrtic','Artèria subclàvia','Aorta toràcica']],
-['Artèries de l’extremitat superior',['Artèria axil·lar','Artèria braquial','Artèria radial','Artèria ulnar']],
-['Artèries de l’abdomen i la pelvis',['Aorta abdominal','Tronc celíac','Artèria renal','Artèria ilíaca comuna','Artèria ilíaca externa']],
-['Artèries de l’extremitat inferior',['Artèria femoral','Artèria poplítia','Artèria tibial anterior','Artèria tibial posterior','Artèria pèdia']],
-['Repte global: artèries principals',['Artèria caròtida comuna','Artèria subclàvia','Aorta abdominal','Artèria femoral','Artèria poplítia']],
-['Venes del cap, coll i tòrax',['Vena jugular interna','Vena jugular externa','Vena subclàvia','Vena braquiocefàlica','Vena cava superior']],
-['Venes de l’extremitat superior',['Vena cefàlica','Vena basílica','Vena mitjana del colze']],
-['Venes de l’abdomen i la pelvis',['Vena cava inferior','Vena renal','Vena ilíaca comuna']],
-['Venes de l’extremitat inferior',['Vena femoral','Vena poplítia','Vena safena magna','Vena tibial anterior','Arc venós dorsal']]];
+['Tronc, coll i grans artèries',['Caròtida comuna','Arc aòrtic','Subclàvia','Axil·lar','Braquial','Aorta toràcica','Tronc celíac','Renal']],
+['Cap, coll i extremitat superior',['Caròtida comuna','Subclàvia','Axil·lar','Braquial','Radial','Cubital']],
+['Abdomen i pelvis arterial',['Aorta toràcica','Tronc celíac','Renal','Aorta abdominal','Ilíaca comuna','Ilíaca externa','Femoral']],
+['Artèries de l’extremitat inferior',['Ilíaca externa','Femoral','Poplítia','Tibial anterior','Tibial posterior','Pèdia']],
+['Repte de l’atles arterial',['Caròtida comuna','Arc aòrtic','Axil·lar','Aorta toràcica','Aorta abdominal','Ilíaca comuna','Radial','Femoral','Tibial anterior','Subclàvia','Braquial','Tronc celíac','Renal','Cubital','Ilíaca externa','Poplítia','Tibial posterior','Pèdia']],
+['Cap, coll i retorn central',['Jugular interna','Jugular externa','Subclàvia','Braquiocefàlica','Cava superior','Cava inferior']],
+['Venes de l’extremitat superior',['Subclàvia','Cefàlica','Basílica','Mitjana del colze','Cava superior']],
+['Venes de l’abdomen i la pelvis',['Cava inferior','Renal','Ilíaca comuna','Femoral']],
+['Repte de l’atles venós',['Jugular interna','Jugular externa','Subclàvia','Braquiocefàlica','Cava superior','Cefàlica','Cava inferior','Ilíaca comuna','Femoral','Tibial anterior','Arc venós dorsal','Basílica','Renal','Mitjana del colze','Poplítia','Safena magna']]];
 export const quiz=[
 ['Quin vas surt del ventricle dret?',['Aorta','Tronc pulmonar','Vena cava','Vena pulmonar'],1],
 ['Quina túnica vascular conté múscul llis?',['Íntima','Adventícia','Mitjana','Endocardi'],2],
